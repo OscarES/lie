@@ -59,7 +59,7 @@ f = cos(q) + sin(p)
 g = sin(q) + cos(p)
 
 def lieop(f,g):
-    dfdq = f.diff(q)
+    dfdq = f.diff(q) # These four rows can be further developed to support diff for all three qs and three ps
     dfdp = f.diff(p)
     dgdq = g.diff(q)
     dgdp = g.diff(p)
