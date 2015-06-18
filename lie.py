@@ -1,7 +1,9 @@
 import numpy as np
-#from sympy import *
-from sympy import Function, Symbol, symbols, summation
-from sympy.mpmath import *
+from scipy.misc import *
+from sympy import *
+#from sympy import Function, Symbol, symbols, summation
+#from sympy.mpmath import *
+
 
 ## Sum test
 #x = np.array([1, 2, 4, 7, 11, 16], dtype=np.float)
@@ -44,15 +46,17 @@ from sympy.mpmath import *
 
 
 print('- Lie calculations...\n')
+# variable definitions
 q = Symbol('q')
 p = Symbol('p')
-f = Function('f')(q,p)
-g = Function('g')(q,p)
 
-dfdq = f.diff(q)
-dfdp = f.diff(p)
-dgdq = g.diff(q)
-dgdp = g.diff(p)
+# arbitrary funs here
+#f = Function('f')(q,p)
+#g = Function('g')(q,p)
+
+# f = skriv fun for f o g har
+f = cos(q) + sin(p)
+g = sin(q) + cos(p)
 
 def lieop(f,g):
     dfdq = f.diff(q)
@@ -82,3 +86,25 @@ print colfcolg
 #dgdq = np.multiply(2,dgdq)
 #
 #print lieop(nN2,dfdq,dgdp,dfdp,dgdq) 
+
+
+## Lie transformation
+def lietransform(ham, vof0, t, order):
+    voft = vof0
+    for i in range(1,order+1):
+        lieterm = lieop(ham,vof0)
+        for j in range(0,i-1):
+            lieterm = lieop(ham,lieterm)
+
+        voft = voft - t**i / float(factorial(i)) * lieterm
+
+    return voft
+
+m = 1.67262178*10**-27 # mass of proton
+ham = p**2 / (2*m)
+vof0 = sin(q) + cos(p)
+t = 10 # arbitrary time
+order = 2
+
+transresult = lietransform(ham, vof0, t, order)
+print transresult
