@@ -158,7 +158,7 @@ def removeprefixones(expr):
         idx = strexpr.find("1.0")
         if idx < 0:
             break
-        if not strexpr[idx+3].isdigit():
+        if not strexpr[idx+3].isdigit(): # makes sure that for example 1.00002 doesn't get removed
             strexpr = strexpr[0:idx] + strexpr[idx+4:]
     newexpr = parse_expr(strexpr)
     return newexpr
