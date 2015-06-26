@@ -19,6 +19,10 @@ v = qi + pi
 
 x = Symbol('x')
 xprime = Symbol('xprime')
+y = Symbol('y')
+yprime = Symbol('yprime')
+z = Symbol('z')
+zprime = Symbol('zprime')
 
 x0 = Symbol('x0')
 xprime0 = Symbol('xprime0')
@@ -26,6 +30,8 @@ xprime0 = Symbol('xprime0')
 #m = 1.67262178*10**-27 # mass of proton
 m = Symbol('m') # arbitrary mass
 
+q = Symbol('q')
+g = Symbol('g')
 l = Symbol('l') # arbitrary length
 
 print('- Lie calculations...\n')
@@ -37,20 +43,17 @@ p = Symbol('p')
 #f = Function('f')(q,p)
 #g = Function('g')(q,p)
 
-# f = skriv fun for f o g har
-f = cos(q) + sin(p)
-g = sin(q) + cos(p)
 
 def lieop(f,g):
 
     # The old way only one dim
-    dfdq = f.diff(q) # These four rows can be further developed to support diff for all three qs and three ps
-    dfdp = f.diff(p)
-    dgdq = g.diff(q)
-    dgdp = g.diff(p)
-    sumterm = dfdq*dgdp-dfdp*dgdq
-
-    i, a, b = symbols('i a b', integer=True)
+#    dfdq = f.diff(q) # These four rows can be further developed to support diff for all three qs and three ps
+#    dfdp = f.diff(p)
+#    dgdq = g.diff(q)
+#    dgdp = g.diff(p)
+#    sumterm = dfdq*dgdp-dfdp*dgdq
+#
+#    i, a, b = symbols('i a b', integer=True)
     #colfcolg = summation(sumterm, (i,a,b))
 
     # New way all three dims
@@ -77,10 +80,6 @@ def lieop(f,g):
 
     return colfcolg
 
-colfcolg = lieop(f,g)
-
-print colfcolg
-
 
 ## Lie transformation
 def lietransform(ham, vof0, t, order):
@@ -90,6 +89,7 @@ def lietransform(ham, vof0, t, order):
         for j in range(0,i-1):
             lieterm = lieop(ham,lieterm)
 
+        #print "lieterm:",lieterm
         voft = voft - t**i / float(factorial(i)) * lieterm
 
     return voft
@@ -105,6 +105,7 @@ def lietransform(ham, vof0, t, order):
 
 ## elementary elements
 # drift
+print "Drift..."
 driftham = px**2 / (2*m) + py**2 / (2*m) + pz**2 / (2*m)
 
 #t = 10
@@ -175,3 +176,28 @@ m22 = removeprefixones(selectterm(xprimeofl,xprime))
 driftmatrix = [[m11, m12], [m21, m22]]
 print driftmatrix
 
+
+# quad
+print "Quad..."
+quadham = px**2 / (2*m) + py**2 / (2*m) + pz**2 / (2*m) + q*g*pz*qx**2 / (2*m) - q*g*pz*qy**2 / (2*m)
+
+#t = 10
+t = Symbol('t')
+order = 6
+
+transresultqx = lietransform(quadham, v[0], t, order)
+print "transresultqx:", transresultqx
+transresultpx = lietransform(quadham, v[3], t, order)
+print "transresultpx:", transresultpx
+
+# substitution
+xofl = transresultqx.subs(t, l*m/pz)
+xofl = xofl.subs(qx, x0)
+xofl = xofl.subs(px/pz, xprime)
+print "xofl:", xofl
+
+xprimeofl = transresultpx/pz
+xprimeofl = xprimeofl.subs(t, l*m/pz)
+xprimeofl = xprimeofl.subs(qx, x0)
+xprimeofl = xprimeofl.subs(px/pz, xprime)
+print "xprimeofl:", xprimeofl
