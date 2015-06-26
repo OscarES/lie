@@ -118,15 +118,16 @@ transresultpx = lietransform(driftham, v[3], t, order)
 print "transresultpx:", transresultpx
 
 # substitution
-xofl = transresultqx.subs(t, l*m/pz)
-xofl = xofl.subs(qx, x0)
-xofl = xofl.subs(px/pz, xprime)
+def substitution(expr):
+    expr = expr.subs(t, l*m/pz)
+    expr = expr.subs(qx, x0)
+    expr = expr.subs(px/pz, xprime)
+    return expr
+
+xofl = substitution(transresultqx)
 print "xofl:", xofl
 
-xprimeofl = transresultpx/pz
-xprimeofl = xprimeofl.subs(t, l*m/pz)
-xprimeofl = xprimeofl.subs(qx, x0)
-xprimeofl = xprimeofl.subs(px/pz, xprime)
+xprimeofl = substitution(transresultpx/pz)
 print "xprimeofl:", xprimeofl
 
 
@@ -152,7 +153,7 @@ def selectterm(expr, var):
     newexpr = parse_expr(strexpr)
     return newexpr
 
-def removeprefixones(expr):
+def removeprefixones(expr): # still in an early form, BUG: it removes 1.0 if there is a space behind it. BUG: Does not work with several 1.0, especially if there is an early 1.0* then the other 1.0 won't be removed and we're stuck in a loop
     strexpr = str(expr)
     idx = 0
     while True:
@@ -179,7 +180,7 @@ print driftmatrix
 
 # quad
 print "Quad..."
-quadham = px**2 / (2*m) + py**2 / (2*m) + pz**2 / (2*m) + q*g*pz*qx**2 / (2*m) - q*g*pz*qy**2 / (2*m)
+quadham = px**2 / (2*m) + py**2 / (2*m) + pz**2 / (2*m) + q*g*pz*qx**2 / (2*m) - q*g*pz*qy**2 / (2*m) # for some reason the denominator always has to be last in the term
 
 #t = 10
 t = Symbol('t')
@@ -191,13 +192,11 @@ transresultpx = lietransform(quadham, v[3], t, order)
 print "transresultpx:", transresultpx
 
 # substitution
-xofl = transresultqx.subs(t, l*m/pz)
-xofl = xofl.subs(qx, x0)
-xofl = xofl.subs(px/pz, xprime)
+xofl = substitution(transresultqx)
+#fourier() here to go from taylor to sin & cos ?
 print "xofl:", xofl
 
-xprimeofl = transresultpx/pz
-xprimeofl = xprimeofl.subs(t, l*m/pz)
-xprimeofl = xprimeofl.subs(qx, x0)
-xprimeofl = xprimeofl.subs(px/pz, xprime)
+xprimeofl = substitution(transresultpx/pz)
 print "xprimeofl:", xprimeofl
+
+#for the other dimension replace x with y and z, will make functions for this later
