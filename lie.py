@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.misc import *
+#from scipy.linalg import *
+from scipy import linalg
 from sympy.parsing.sympy_parser import parse_expr
 from sympy import *
 #printing.init_printing(use_latex='mathjax') # latex output in ipython notebook
@@ -35,6 +37,7 @@ q = Symbol('q')
 g = Symbol('g')
 l = Symbol('l') # arbitrary length
 k = Symbol('k')
+t = Symbol('t')
 
 print('- Lie calculations...\n')
 # variable definitions
@@ -192,7 +195,8 @@ print driftmatrix
 # quad
 print "Quad..."
 #quadham = px**2 / (2*m) + py**2 / (2*m) + pz**2 / (2*m) + q*g*pz*qx**2 / (2*m) - q*g*pz*qy**2 / (2*m) # for some reason the denominator always has to be last in the term. for my formalism
-quadham = -l/2*(k**2*(qx**2+qy**2+qz**2)+px**2+py**2+pz**2) # for Ems formalism, replace k with -k for defocus
+#quadham = -l/2*(k**2*(qx**2+qy**2+qz**2)+px**2+py**2+pz**2) # for Ems formalism, replace k with -k for defocus
+quadham = -l/2*(k**2*(qx**2+qy**2)+px**2+py**2+pz**2) # for Ems formalism, replace k with -k for defocus. Without quad term in z dir
 
 #t = 10
 t = Symbol('t')
@@ -214,3 +218,175 @@ xprimeofl = substitution(xprimeofl)
 print "xprimeofl:", xprimeofl
 
 #for the other dimension replace x with y and z, will make functions for this later
+
+
+########### How many terms in the taylor series...
+#I = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+#minusI = np.zeros([3,3])-I
+##print minusI
+##print np.dot(I,I)
+#zero = np.zeros([3,3])
+#Supper = np.concatenate((zero,I), axis=1)
+#Sunder = np.concatenate((minusI,zero), axis=1)
+#S = np.concatenate((Supper,Sunder), axis=0)
+##print S
+##print np.dot(S,S) # correct! (-I)
+#
+#sasexp = linalg.expm(S)
+#left = np.dot(S,sasexp)
+#right = np.dot(sasexp,S)
+#
+##print left
+##print right
+##print np.around(left-right) # proves (1.33)
+#
+## jacobian
+#print ''
+#print 'Jacobian...'
+#dxdx = xofl.diff(x0)
+#dxdp = xofl.diff(px)
+#dpdx = xprimeofl.diff(x0)
+#dpdp = xprimeofl.diff(px)
+#
+#print 'dxdx:',dxdx
+#print 'dxdp:',dxdp
+#print 'dpdx:',dpdx
+#print 'dpdp:',dpdp
+#print ''
+#
+## Either det(J) == 1
+#dxdxtimdpdp = (dxdx*dpdp)
+#dxdptimdpdx = (dxdp*dpdx)
+##print 'dxdx*dpdp:',dxdxtimdpdp
+##print 'dxdp*dpdx:',dxdptimdpdx
+##print ''
+#
+#
+## determinant by 'hand'
+#detJ = dxdx*dpdp - dxdp*dpdx
+#detJ = simplify(detJ)
+#print 'detJ =', detJ # when this prints out 1 the simplecity is proved and no further terms are needed
+##J = np.mat('[1 2;3 4]')
+##J = np.mat('[dxdx dxdp; dpdx dpdp]')
+##J = Matrix([[dxdx, dxdp], [dpdx, dpdp]])
+#
+##print J
+#
+## or np.dot(J.transpose(),np.dot(S,J)) == S. Jt*S*J
+## -> dxdx*dpdp - dxdp*dpdx
+#m12 = dxdx*dpdp - dxdp*dpdx
+#m12 = simplify(m12)
+#print 'm12:',m12
+#
+## As long as detJ and m12 gives: 1+ordo(order+1) it should be fine right?
+## But 1+ordo(2) is the result for order 1, can that really work? Shouldn't the order be higher in order to describe the quadrupole?
+#
+### arbitrary functions and order into lietrans, one dim for simplicity
+#print ''
+#print 'arbitrary functions into lietransformation...'
+#def simplelieop(f,g):
+#    # The old way only one dim
+#    dfdq = f.diff(q) # These four rows can be further developed to support diff for all three qs and three ps
+#    dfdp = f.diff(p)
+#    dgdq = g.diff(q)
+#    dgdp = g.diff(p)
+#    result = dfdq*dgdp-dfdp*dgdq
+#    return result
+#
+### Lie transformation
+## old version
+#def simplelietransform(ham, vof0, t, order):
+#    voft = vof0
+#    for i in range(1,order+1):
+#        lieterm = simplify(simplelieop(ham,vof0))
+#        for j in range(0,i-1):
+#            lieterm = simplify(simplelieop(ham,lieterm))
+#
+#        #print "lieterm:",lieterm
+#        #voft = voft + t**i / factorial(i) * lieterm # for my formalism
+#        voft = voft + lieterm / factorial(i) # for Ems formalism
+#
+#    return voft
+#
+#
+#f = Function('f')(q,p)
+#g = Function('g')(q,p)
+##f = Function('f')(qx,qy,qz,px,py,pz)
+##g = Function('g')(qx,qy,qz,px,py,pz)
+##j = Symbol('j') # order
+#j = 2
+#result = simplelietransform(f, g, t, j) # v[0] is for q
+#print result
+
+
+
+
+
+
+
+##################### Classes and elements
+print ''
+print 'Classes and elements...'
+
+def xfunFromHam(ham, order):
+    transresultqx = lietransform(ham, v[0], t, order)
+    xofl = substitution(transresultqx)
+    return xofl
+
+def xprimefunFromHam(ham, order):
+    transresultpx = lietransform(ham, v[3], t, order)
+    #xprimeofl = simplify(transresultpx/pz) # for my formalism
+    xprimeofl = simplify(transresultpx) # for Ems formalism
+    xprimeofl = substitution(xprimeofl)
+    return xprimeofl
+
+class Element:
+    
+
+
+    def __init__(self, name, ham, k, l, order):
+        self.name = name
+        self.ham = ham
+        self.k = k
+        self.l = l
+        self.xfun = xfunFromHam(ham, order)
+        self.xprimefun = xprimefunFromHam(ham, order)
+
+    def printInfo(self):
+        return self.name
+
+order = 5
+elem = Element('quad', quadham, k, l, order)
+print elem.name
+print elem.printInfo()
+print 'xfun:',elem.xfun
+print 'xprimefun:',elem.xprimefun
+
+def straight():
+    xp = np.arange(0,1)        
+    x = np.arange(-0.05,0.06,0.01) #x and xp for when xp is 0
+    return x,xp
+
+def scanned():
+    xp = np.arange(-0.0001,0.0001,0.00001)
+    x = np.arange(-0.05,0.06,0.01)     # x and xp for when xp is scanned
+    return x,xp
+                            
+def randomed():
+    x = []
+    for a in range (0, 10):
+        x.append(random.uniform(-0.05, 0.05))
+    
+    xp = []
+    for a in range (0, 10):
+        xp.append(random.uniform(-0.00001, 0.00001)) #x and xp dfor random values
+    return x,xp
+                                                                                
+def gaussian():
+    x = []
+    for a in range (0, 10):
+        x.append(random.gauss(0, 0.01))
+    xp = []
+    for a in range (0, 10):
+        xp.append(random.gauss(0, 0.00001))
+    return x,xp
