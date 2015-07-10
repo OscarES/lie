@@ -4,6 +4,8 @@ from scipy.misc import *
 from scipy import linalg
 from sympy.parsing.sympy_parser import parse_expr
 from sympy import *
+import math
+import random
 #printing.init_printing(use_latex='mathjax') # latex output in ipython notebook
 #from sympy import Function, Symbol, symbols, summation
 #from sympy.mpmath import *
@@ -197,6 +199,7 @@ print "Quad..."
 #quadham = px**2 / (2*m) + py**2 / (2*m) + pz**2 / (2*m) + q*g*pz*qx**2 / (2*m) - q*g*pz*qy**2 / (2*m) # for some reason the denominator always has to be last in the term. for my formalism
 #quadham = -l/2*(k**2*(qx**2+qy**2+qz**2)+px**2+py**2+pz**2) # for Ems formalism, replace k with -k for defocus
 quadham = -l/2*(k**2*(qx**2+qy**2)+px**2+py**2+pz**2) # for Ems formalism, replace k with -k for defocus. Without quad term in z dir
+quadhamdefocus = -l/2*(-k**2*(qx**2+qy**2)+px**2+py**2+pz**2) # for Ems formalism, replace k with -k for defocus. Without quad term in z dir
 
 #t = 10
 t = Symbol('t')
@@ -341,9 +344,6 @@ def xprimefunFromHam(ham, order):
     return xprimeofl
 
 class Element:
-    
-
-
     def __init__(self, name, ham, k, l, order):
         self.name = name
         self.ham = ham
@@ -355,38 +355,239 @@ class Element:
     def printInfo(self):
         return self.name
 
+    def evaluate(self, (mulxin, mulxpin)): # sending in xin and xpin as a vector (same for return) allows "recursive" calls and a lattice can be constructed
+        xoutmul = list()
+        xpoutmul = list()
+        for xin, xpin in zip(mulxin, mulxpin):
+            expr = self.xfun.subs([(x0,xin), (px,xpin), (k,self.k), (l,self.l)])
+            xout = expr.evalf()
+            xoutmul.append(xout)
+            expr = self.xprimefun.subs([(x0,xin), (px,xpin), (k,self.k), (l,self.l)])
+            xpout = expr.evalf()
+            xpoutmul.append(xpout)
+        return (xoutmul,xpoutmul)
+
 order = 5
-elem = Element('quad', quadham, k, l, order)
+elem = Element('drift', driftham, k, l, order)
 print elem.name
 print elem.printInfo()
 print 'xfun:',elem.xfun
 print 'xprimefun:',elem.xprimefun
 
+# evalutate
+print elem.evaluate(([1], [1]))
+
+order = 5
+myK = 1
+myQuadL = 0.5
+myDriftL = 1.83
+
+myQuad = Element('quad', quadham, myK, myQuadL, order)
+myDrift = Element('drift', driftham, 0, myDriftL, order)
+
+#afterQuad = myQuad.evaluate((1,0))
+#print 'afterQuad:',afterQuad
+#afterDrift = myDrift.evaluate(afterQuad)
+#print 'afterDrift:',afterDrift
+afterDrift2 = myDrift.evaluate(myQuad.evaluate(([1],[0])))
+print 'afterDrift2:',afterDrift2
+
+#print cos(3.14/2).evalf() # python uses radians
+
+####### Randoms
+print ''
+print 'Randoms...'
+
+# with arange
+#def straight():
+#    xp = np.arange(0,1)        
+#    x = np.arange(-0.05,0.06,0.01) #x and xp for when xp is 0
+#    return x,xp
+#
+#def scanned():
+#    xp = np.arange(-0.0001,0.0001,0.00001)
+#    x = np.arange(-0.05,0.06,0.01)     # x and xp for when xp is scanned
+#    return x,xp
+#                            
+#def randomed():
+#    x = []
+#    for a in range (0, 10):
+#        x.append(random.uniform(-0.05, 0.05))
+#    
+#    xp = []
+#    for a in range (0, 10):
+#        xp.append(random.uniform(-0.00001, 0.00001)) #x and xp dfor random values
+#    return x,xp
+#                                                                                
+#def gaussian():
+#    x = []
+#    for a in range (0, 10):
+#        x.append(random.gauss(0, 0.01))
+#    xp = []
+#    for a in range (0, 10):
+#        xp.append(random.gauss(0, 0.00001))
+#    return x,xp
+
+# with linspace
+nbrofparticles = 3
 def straight():
-    xp = np.arange(0,1)        
-    x = np.arange(-0.05,0.06,0.01) #x and xp for when xp is 0
+    xp = np.linspace(0,0,nbrofparticles)        
+
+    x = np.linspace(-1,1,nbrofparticles) #x and xp for when xp is 0
     return x,xp
 
 def scanned():
-    xp = np.arange(-0.0001,0.0001,0.00001)
-    x = np.arange(-0.05,0.06,0.01)     # x and xp for when xp is scanned
+    xp = np.linspace(-0.0001,0.0001,nbrofparticles)
+    x = np.linspace(-0.05,0.05,nbrofparticles)     # x and xp for when xp is scanned
     return x,xp
                             
 def randomed():
     x = []
-    for a in range (0, 10):
+    for a in range (0, nbrofparticles):
         x.append(random.uniform(-0.05, 0.05))
     
     xp = []
-    for a in range (0, 10):
+    for a in range (0, nbrofparticles):
         xp.append(random.uniform(-0.00001, 0.00001)) #x and xp dfor random values
     return x,xp
                                                                                 
 def gaussian():
     x = []
-    for a in range (0, 10):
+    for a in range (0, nbrofparticles):
         x.append(random.gauss(0, 0.01))
     xp = []
-    for a in range (0, 10):
+    for a in range (0, nbrofparticles):
         xp.append(random.gauss(0, 0.00001))
     return x,xp
+
+print 'straight:', straight()
+print 'scanned:', scanned()
+print 'randomed:', randomed()
+print 'gaussian:', gaussian()
+
+## Multiple particles and lattice construction
+print ''
+print 'Multiple particles and lattice construction...'
+
+mulx, mulxp = straight()
+print 'mulx', mulx
+print 'mulxp', mulxp
+order = 5
+myK = 2
+myQuadL = 0.5
+myDriftL = 1.83
+
+myQuad = Element('quad', quadham, myK, myQuadL, order)
+myDrift = Element('drift', driftham, 0, myDriftL, order)
+
+lattice = list()
+lattice.append(myQuad)
+lattice.append(myDrift)
+print lattice[0].name
+print lattice[1].name
+
+def evalLattice(lattice,(xin,xpin)):
+    xout, xpout = xin,xpin
+    for elem in lattice:
+        xout, xpout = elem.evaluate((xout,xpout))
+    return xout, xpout
+
+print 'evalLattice:',evalLattice(lattice,([1],[0]))
+print 'evalLattice with mul particles',evalLattice(lattice,(mulx,mulxp))
+
+##### Saved and loaded data
+print ''
+datamode = raw_input('Save or load data (s/l):')
+datafile = raw_input('Enter file name:')
+if datamode == 's':
+    stx, stxp = straight()
+    scx, scxp = scanned()
+    rax, raxp = randomed()
+    gax, gaxp = gaussian()
+
+    dt = np.dtype([('stx', 'd'), ('stxp', 'd'), ('scx', 'd'), ('scxp', 'd'), ('rax', 'd'), ('raxp', 'd'), ('gax', 'd'), ('gaxp', 'd')])
+    a = np.zeros(nbrofparticles, dt)
+    a['stx'] = stx
+    a['stxp'] = stxp
+    a['scx'] = scx
+    a['scxp'] = scxp
+    a['rax'] = rax
+    a['raxp'] = raxp
+    a['gax'] = gax
+    a['gaxp'] = gaxp
+
+    np.savetxt(datafile, a, '%10s')
+
+elif datamode == 'l':
+    try:
+        stx, stxp, scx, scxp, rax, raxp, gax, gaxp = np.loadtxt(datafile,unpack = True)
+    except:
+        print 'Bad datafile!'
+        quit()
+    #print stx, stxp, scx, scxp, rax, raxp, gax, gaxp
+
+###### eval data, lattice defined above
+print 'Straight...'
+print 'Input x and xp:', stx, stxp
+stxo, stxpo = evalLattice(lattice,(stx,stxp))
+print 'Output x and xp:', stxo, stxpo
+
+print 'Scanned...'
+print 'Input x and xp:', scx, scxp
+scxo, scxpo = evalLattice(lattice,(scx,scxp))
+print 'Output x and xp:', scxo, scxpo
+
+print 'Random...'
+print 'Input x and xp:', rax, raxp
+raxo, raxpo = evalLattice(lattice,(rax,raxp))
+print 'Output x and xp:', raxo, raxpo
+
+print 'Gaussian...'
+print 'Input x and xp:', gax, gaxp
+gaxo, gaxpo = evalLattice(lattice,(gax,gaxp))
+print 'Output x and xp:', gaxo, gaxpo
+
+
+##### FODO
+print ''
+print 'FODO...'
+fF = Element('quad', quadham, myK, myQuadL, order)
+oO1 = Element('drift', driftham, 0, myDriftL, order)
+dD = Element('quaddefocus', quadhamdefocus, myK, myQuadL, order)
+oO2 = Element('drift', driftham, 0, myDriftL, order)
+
+fodoLattice = list()
+fodoLattice.append(fF)
+fodoLattice.append(oO1)
+fodoLattice.append(dD)
+fodoLattice.append(oO2)
+
+# input from randoms and loads above
+
+stxoFODO, stxpoFODO = evalLattice(fodoLattice,(stx,stxp))
+
+print 'Output x and xp:', stxoFODO, stxpoFODO
+
+##### Focal length
+print ''
+print 'Focal length...'
+singleQuad = list()
+singleQuad.append(fF)
+stxoQ, stxpoQ = evalLattice(singleQuad,(stx,stxp))
+print 'beforeQ:',stx, stxp 
+print 'afterQ:',stxoQ, stxpoQ 
+scxoQ, scxpoQ = evalLattice(singleQuad,(scx,scxp))
+raxoQ, raxpoQ = evalLattice(singleQuad,(rax,raxp))
+gaxoQ, gaxpoQ = evalLattice(singleQuad,(gax,gaxp))
+
+stFlength = -stxoQ[0]/stxpoQ[0]
+print 'Straight focal length:', stFlength
+scFlength = -scxoQ[0]/scxpoQ[0]
+print 'Scanned focal length:', scFlength
+raFlength = -raxoQ[0]/raxpoQ[0]
+print 'Random focal length:', raFlength
+gaFlength = -gaxoQ[0]/gaxpoQ[0]
+print 'Gaussian focal length:', gaFlength
+
+##### Bugs to fix
+# Fix k substitution (remove the substitution and just calculate for k's value)
