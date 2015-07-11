@@ -590,4 +590,4 @@ gaFlength = -gaxoQ[0]/gaxpoQ[0]
 print 'Gaussian focal length:', gaFlength
 
 ##### Bugs to fix
-# Fix k substitution (remove the substitution and just calculate for k's value)
+# Fix k substitution (remove the substitution and just calculate for k's value) -> seems like the expansion doesn't hold for k > 1...
