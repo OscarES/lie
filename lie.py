@@ -547,3 +547,5 @@ if len(outputfile) > 0:
 # Finish writing the output "spool" so that all required data is there
 
 # Start simulating 2D particles
+
+# Particles should be stored in the output file when they are done to limit memory usage. This might not be optimal for when space charge forces are introduced
