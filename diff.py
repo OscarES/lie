@@ -21,5 +21,10 @@ stdxp = sum(diffxp**2) - sum(diffxp)**2
 print 'stdx:',stdx
 print 'stdxp:',stdxp
 
-## TODO: make the program do it for 2D and follow the format (column vectors):
+## TODO: 
+#1: make the program do it for 2D 
+
+#2:follow the format (column vectors):
 # x, xp, y, yp, alpha, beta, epsilon
+
+#3: make the program work by calling something like: python diff.py out.txt out2.txt
