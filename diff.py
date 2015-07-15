@@ -20,3 +20,6 @@ stdxp = sum(diffxp**2) - sum(diffxp)**2
 
 print 'stdx:',stdx
 print 'stdxp:',stdxp
+
+## TODO: make the program do it for 2D and follow the format (column vectors):
+# x, xp, y, yp, alpha, beta, epsilon
