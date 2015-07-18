@@ -294,28 +294,27 @@ def xprimefunFromHam(ham, order):
     return xprimeofl
 
 class Element:
-    def __init__(self, name, ham, k, l, order):
+    def __init__(self, name, ham, kval, lval, order):
         self.name = name
         self.ham = ham
-        self.k = k
-        self.l = l
+
         self.xfun = xfunFromHam(ham, order)
         self.xprimefun = xprimefunFromHam(ham, order)
+
+        self.xf = self.xfun.subs([(k,kval),(l,lval)])
+        self.xpf = self.xprimefun.subs([(k,kval), (l,lval)])
+
+        self.xf = lambdify([x0,px],self.xf, "numpy")
+        self.xpf = lambdify([x0,px],self.xpf, "numpy")
 
     def printInfo(self):
         return self.name
 
     def evaluate(self, (mulxin, mulxpin)): # sending in xin and xpin as a vector (same for return) allows "recursive" calls and a lattice can be constructed
-        xoutmul = list()
-        xpoutmul = list()
-        for xin, xpin in zip(mulxin, mulxpin):
-            expr = self.xfun.subs([(x0,xin), (px,xpin), (k,self.k), (l,self.l)])
-            xout = expr.evalf()
-            xoutmul.append(xout)
-            expr = self.xprimefun.subs([(x0,xin), (px,xpin), (k,self.k), (l,self.l)])
-            xpout = expr.evalf()
-            xpoutmul.append(xpout)
-        return (xoutmul,xpoutmul)
+        xout = self.xf(mulxin, mulxpin)
+        xpout = self.xpf(mulxin, mulxpin)
+
+        return (xout,xpout)
 
 
 #print cos(3.14/2).evalf() # python uses radians
@@ -413,7 +412,7 @@ nbrofparticles = raw_input('Enter number of particles:')
 nbrofparticles = int(nbrofparticles)
 
 order = 5
-myK = 2
+myK = 0.001
 myQuadL = 0.5
 myDriftL = 1.83
 
@@ -493,10 +492,13 @@ dD = Element('quaddefocus', quadhamdefocus, myK, myQuadL, order)
 oO2 = Element('drift', driftham, 0, myDriftL, order)
 
 fodoLattice = list()
-fodoLattice.append(fF)
-fodoLattice.append(oO1)
-fodoLattice.append(dD)
-fodoLattice.append(oO2)
+nbroffodos = raw_input('Enter number of FODO cells:')
+nbroffodos = int(nbroffodos)
+for i in range(nbroffodos):
+    fodoLattice.append(fF)
+    fodoLattice.append(oO1)
+    fodoLattice.append(dD)
+    fodoLattice.append(oO2)
 
 # input from randoms and loads above
 
@@ -549,3 +551,9 @@ if len(outputfile) > 0:
 # Start simulating 2D particles
 
 # Particles should be stored in the output file when they are done to limit memory usage. This might not be optimal for when space charge forces are introduced
+
+# See first comment
+
+##### Comments and stuff not to forget
+# 1. How good the approximation is: Well the criteria is that the determinant of the Jacobian has to be 1. You can decide to truncate at some order with an error that is a fraction of 1 (like 10e-6 or 10e-4).
+# The closer the determinant is to 1 the most accurate will be your approximation. -> make some code to calculate the Jacobian and see how much it differs from 1. Maybe perhaps have it find the lowest order with acceptable errors
