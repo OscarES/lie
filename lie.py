@@ -33,6 +33,11 @@ zprime = Symbol('zprime')
 
 x0 = Symbol('x0')
 xprime0 = Symbol('xprime0')
+y0 = Symbol('y0')
+yprime0 = Symbol('yprime0')
+z0 = Symbol('z0')
+zprime0 = Symbol('zprime0')
+
 
 #m = 1.67262178*10**-27 # mass of proton
 m = Symbol('m') # arbitrary mass
@@ -47,8 +52,8 @@ t = Symbol('t')
 ## Hamiltonians
 #ems way
 driftham = -l/2*(px**2 + py**2 + pz**2)
-quadham = -l/2*(k**2*(qx**2+qy**2)+px**2+py**2+pz**2) # (Ems formalism), replace k with -k for defocus. Without quad term in z dir
-quadhamdefocus = -l/2*(-k**2*(qx**2+qy**2)+px**2+py**2+pz**2) # (Ems formalism), replace k with -k for defocus. Without quad term in z dir
+quadham = -l/2*(k**2*(qx**2-qy**2)+px**2+py**2+pz**2) # (Ems formalism), replace k with -k for defocus. Without quad term in z dir
+quadhamdefocus = -l/2*(-k**2*(qx**2-qy**2)+px**2+py**2+pz**2) # (Ems formalism), replace k with -k for defocus. Without quad term in z dir
 
 #old way
 #driftham = px**2 / (2*m) + py**2 / (2*m) + pz**2 / (2*m) # for my formalism
@@ -116,6 +121,8 @@ def substitution(expr):
     expr = expr.subs(t, l*m/pz)
     expr = expr.subs(qx, x0)
     expr = expr.subs(px/pz, xprime)
+    expr = expr.subs(qy, y0)
+    expr = expr.subs(py/pz, yprime)
     expr = expr.subs(q*g/pz,k**2)
     return expr
 
@@ -176,7 +183,7 @@ def removeprefixones(expr): # still in an early form, BUG: it removes 1.0 if the
 
 
 
-########### How many terms in the taylor series... Remake this code so that it finds the optimal order for the run (determinant of the Jacobian differ by less than 10^-5 or 10^-6 from 1) Use and print this order
+########### How many terms in the taylor series... Remake this code so that it finds the optimal order for the run (determinant of the Jacobian differ by less than 10^-5 or 10^-6 from 1) Use and print this order. The suggested changes should be inserted into the element class so that each element has a unique order. Or maybe The optimal order for each pole should be calculated and then just inserted, i.e. 1 for drift and ...
 #I = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 #minusI = np.zeros([3,3])-I
 ##print minusI
@@ -281,41 +288,57 @@ def removeprefixones(expr): # still in an early form, BUG: it removes 1.0 if the
 
 
 ##################### Classes and elements
+## Old functions
+#def xfunFromHam(ham, order):
+#    transresultqx = lietransform(ham, v[0], t, order)
+#    xofl = substitution(transresultqx)
+#    return xofl
+#
+#def xprimefunFromHam(ham, order):
+#    transresultpx = lietransform(ham, v[3], t, order)
+#    #xprimeofl = simplify(transresultpx/pz) # for my formalism
+#    xprimeofl = simplify(transresultpx) # for Ems formalism
+#    xprimeofl = substitution(xprimeofl)
+#    return xprimeofl
 
-def xfunFromHam(ham, order):
-    transresultqx = lietransform(ham, v[0], t, order)
-    xofl = substitution(transresultqx)
-    return xofl
-
-def xprimefunFromHam(ham, order):
-    transresultpx = lietransform(ham, v[3], t, order)
-    #xprimeofl = simplify(transresultpx/pz) # for my formalism
-    xprimeofl = simplify(transresultpx) # for Ems formalism
-    xprimeofl = substitution(xprimeofl)
-    return xprimeofl
+## New more generalized function
+def funFromHam(ham, order, vof0):
+    transresult = lietransform(ham, vof0, t, order)
+    fun = simplify(transresult) # for Ems formalism
+    fun = substitution(fun)
+    return fun
 
 class Element:
     def __init__(self, name, ham, kval, lval, order):
         self.name = name
         self.ham = ham
 
-        self.xfun = xfunFromHam(ham, order)
-        self.xprimefun = xprimefunFromHam(ham, order)
+        # Same this done 4 times, time for a new function?
+        self.xfun = funFromHam(ham, order, qx)
+        self.xprimefun = funFromHam(ham, order, px)
+        self.yfun = funFromHam(ham, order, qy)
+        self.yprimefun = funFromHam(ham, order, py)
 
         self.xf = self.xfun.subs([(k,kval),(l,lval)])
         self.xpf = self.xprimefun.subs([(k,kval), (l,lval)])
+        self.yf = self.yfun.subs([(k,kval),(l,lval)])
+        self.ypf = self.yprimefun.subs([(k,kval), (l,lval)])
 
-        self.xf = lambdify([x0,px],self.xf, "numpy")
-        self.xpf = lambdify([x0,px],self.xpf, "numpy")
+        self.xf = lambdify([x0,y0,px,py],self.xf, "numpy")
+        self.xpf = lambdify([x0,y0,px,py],self.xpf, "numpy")
+        self.yf = lambdify([x0,y0,px,py],self.yf, "numpy")
+        self.ypf = lambdify([x0,y0,px,py],self.ypf, "numpy")
 
     def printInfo(self):
         return self.name
 
-    def evaluate(self, (mulxin, mulxpin)): # sending in xin and xpin as a vector (same for return) allows "recursive" calls and a lattice can be constructed
-        xout = self.xf(mulxin, mulxpin)
-        xpout = self.xpf(mulxin, mulxpin)
+    def evaluate(self, (mulxin, mulxpin, mulyin, mulypin)): # sending in xin and xpin as a vector (same for return) allows "recursive" calls and a lattice can be constructed
+        xout = self.xf(mulxin, mulxpin, mulyin, mulypin)
+        xpout = self.xpf(mulxin, mulxpin, mulyin, mulypin)
+        yout = self.yf(mulxin, mulxpin, mulyin, mulypin)
+        ypout = self.ypf(mulxin, mulxpin, mulyin, mulypin)
 
-        return (xout,xpout)
+        return (xout,xpout,yout,ypout)
 
 
 #print cos(3.14/2).evalf() # python uses radians
@@ -425,11 +448,11 @@ lattice.append(myDrift)
 #print lattice[0].name
 #print lattice[1].name
 
-def evalLattice(lattice,(xin,xpin)):
-    xout, xpout = xin,xpin
+def evalLattice(lattice,(xin,xpin,yin,ypin)):
+    xout, xpout, yout, ypout = xin,xpin,yin,ypin
     for elem in lattice:
-        xout, xpout = elem.evaluate((xout,xpout))
-    return xout, xpout
+        xout, xpout, yout, ypout = elem.evaluate((xout,xpout,yout,ypout))
+    return xout, xpout, yout, ypout
 
 #print 'evalLattice:',evalLattice(lattice,([1],[0]))
 #print 'evalLattice with mul particles',evalLattice(lattice,(mulx,mulxp))
@@ -505,38 +528,45 @@ for i in range(nbroffodos):
 # input from randoms and loads above
 
 #stxoFODO, stxpoFODO = evalLattice(fodoLattice,(stx,stxp))
-stxoFODO, stxpoFODO = evalLattice(fodoLattice,(x,xp)) # Calculate the output values
+xoFODO, xpoFODO, yoFODO, ypoFODO = evalLattice(fodoLattice,(x,y,xp,yp)) # Calculate the output values
 
-#print 'Output x and xp:', stxoFODO, stxpoFODO
+#print 'Output x,y,xp and yp:', xoFODO, yoFODO, xpoFODO, ypoFODO
 
 ######## Print phase space
-#plot(x,xp) # (the phase space)
-def plotPhaseSpace(x,xp):
+print 'Plotting...'
+def plotPhaseSpace(x,y,xp,yp):
+    plt.subplot(121)
     plt.plot(x,xp,'ro')
     plt.xlabel('x')
     plt.ylabel('xp')
+    
+    plt.subplot(122)
+    plt.plot(y,yp,'ro')
+    plt.xlabel('y')
+    plt.ylabel('yp')
+
     plt.show()
 
-plotPhaseSpace(stxoFODO, stxpoFODO)
+plotPhaseSpace(xoFODO, xpoFODO, yoFODO, ypoFODO)
 
 ######## Output
-def saveOutput(x,xp,nbrofparticles):
+def saveOutput(x,xp,y,yp,nbrofparticles):
     outputfile = raw_input('Enter file for output data:')
     if len(outputfile) < 1 : outputfile = "out.txt"
     if len(outputfile) > 0:
-        dt = np.dtype([('x', 'd'), ('xp', 'd')]) #('x', 'd'), ('xp', 'd'), ('alpha', 'd'), ('beta', 'd'), ('epsilon', 'd')])
+        dt = np.dtype([('x', 'd'), ('xp', 'd'), ('y', 'd'), ('yp', 'd'), ('alpha', 'd'), ('beta', 'd'), ('epsilon', 'd')])
         a = np.zeros(nbrofparticles, dt)
         a['x'] = x
         a['xp'] = xp
-    #    a['y'] = y
-    #    a['yp'] = yp
-    #    a['alpha'] = 0
-    #    a['beta'] = 0
-    #    a['epsilon'] = 0
+        a['y'] = y
+        a['yp'] = yp
+        a['alpha'] = 0
+        a['beta'] = 0
+        a['epsilon'] = 0
     
         np.savetxt(outputfile, a, '%10s')
 
-saveOutput(stxoFODO, stxpoFODO, nbrofparticles)
+saveOutput(xoFODO, xpoFODO, yoFODO, ypoFODO, nbrofparticles)
 
 ##### Focal length
 #print ''
@@ -560,11 +590,8 @@ saveOutput(stxoFODO, stxpoFODO, nbrofparticles)
 #print 'Gaussian focal length:', gaFlength
 
 ##### Bugs to fix and TODOs
-# Fix k substitution (remove the substitution and just calculate for k's value) -> seems like the expansion doesn't hold for k > 1...
 
 # Finish writing the output "spool" so that all required data is there
-
-# Start simulating 2D particles
 
 # Particles should be stored in the output file when they are done to limit memory usage. This might not be optimal for when space charge forces are introduced
 
@@ -573,3 +600,7 @@ saveOutput(stxoFODO, stxpoFODO, nbrofparticles)
 ##### Comments and stuff not to forget
 # 1. How good the approximation is: Well the criteria is that the determinant of the Jacobian has to be 1. You can decide to truncate at some order with an error that is a fraction of 1 (like 10e-6 or 10e-4).
 # The closer the determinant is to 1 the most accurate will be your approximation. -> make some code to calculate the Jacobian and see how much it differs from 1. Maybe perhaps have it find the lowest order with acceptable errors
+
+# 2. Seems like the expansion doesn't hold for k > 1...
+
+# 3. Changed to a minus sign in front of the qy**2 in the Ham to get proper focus/defocus
