@@ -6,6 +6,7 @@ from sympy.parsing.sympy_parser import parse_expr
 from sympy import *
 import math
 import random
+import matplotlib.pyplot as plt
 #printing.init_printing(use_latex='mathjax') # latex output in ipython notebook
 #from sympy import Function, Symbol, symbols, summation
 #from sympy.mpmath import *
@@ -175,7 +176,7 @@ def removeprefixones(expr): # still in an early form, BUG: it removes 1.0 if the
 
 
 
-########### How many terms in the taylor series...
+########### How many terms in the taylor series... Remake this code so that it finds the optimal order for the run (determinant of the Jacobian differ by less than 10^-5 or 10^-6 from 1) Use and print this order
 #I = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 #minusI = np.zeros([3,3])-I
 ##print minusI
@@ -408,8 +409,7 @@ def gaussian(particles):
 
 ## Multiple particles and lattice construction
 print 'Multiple particles and lattice construction...'
-nbrofparticles = raw_input('Enter number of particles:')
-nbrofparticles = int(nbrofparticles)
+
 
 order = 5
 myK = 0.001
@@ -441,6 +441,8 @@ if datamode != 's' and datamode != 'l':
 datafile = raw_input('Enter file name:')
 if len(datafile) < 1 : datafile = "test.txt"
 if datamode == 's':
+    nbrofparticles = raw_input('Enter number of particles:')
+    nbrofparticles = int(nbrofparticles)
     x, xp, y, yp = gaussian(nbrofparticles)
     dt = np.dtype([('x', 'd'), ('xp', 'd'), ('y', 'd'), ('yp', 'd'), ('alpha', 'd'), ('beta', 'd'), ('epsilon', 'd')])
     a = np.zeros(nbrofparticles, dt)
@@ -503,24 +505,38 @@ for i in range(nbroffodos):
 # input from randoms and loads above
 
 #stxoFODO, stxpoFODO = evalLattice(fodoLattice,(stx,stxp))
-stxoFODO, stxpoFODO = evalLattice(fodoLattice,(x,xp))
+stxoFODO, stxpoFODO = evalLattice(fodoLattice,(x,xp)) # Calculate the output values
 
 #print 'Output x and xp:', stxoFODO, stxpoFODO
 
-outputfile = raw_input('Enter file for output data:')
-if len(outputfile) < 1 : outputfile = "out.txt"
-if len(outputfile) > 0:
-    dt = np.dtype([('x', 'd'), ('xp', 'd')]) #('x', 'd'), ('xp', 'd'), ('alpha', 'd'), ('beta', 'd'), ('epsilon', 'd')])
-    a = np.zeros(nbrofparticles, dt)
-    a['x'] = stxoFODO
-    a['xp'] = stxpoFODO
-#    a['y'] = styoFODO
-#    a['yp'] = stypoFODO
-#    a['alpha'] = 0
-#    a['beta'] = 0
-#    a['epsilon'] = 0
+######## Print phase space
+#plot(x,xp) # (the phase space)
+def plotPhaseSpace(x,xp):
+    plt.plot(x,xp,'ro')
+    plt.xlabel('x')
+    plt.ylabel('xp')
+    plt.show()
 
-    np.savetxt(outputfile, a, '%10s')
+plotPhaseSpace(stxoFODO, stxpoFODO)
+
+######## Output
+def saveOutput(x,xp,nbrofparticles):
+    outputfile = raw_input('Enter file for output data:')
+    if len(outputfile) < 1 : outputfile = "out.txt"
+    if len(outputfile) > 0:
+        dt = np.dtype([('x', 'd'), ('xp', 'd')]) #('x', 'd'), ('xp', 'd'), ('alpha', 'd'), ('beta', 'd'), ('epsilon', 'd')])
+        a = np.zeros(nbrofparticles, dt)
+        a['x'] = x
+        a['xp'] = xp
+    #    a['y'] = y
+    #    a['yp'] = yp
+    #    a['alpha'] = 0
+    #    a['beta'] = 0
+    #    a['epsilon'] = 0
+    
+        np.savetxt(outputfile, a, '%10s')
+
+saveOutput(stxoFODO, stxpoFODO, nbrofparticles)
 
 ##### Focal length
 #print ''
