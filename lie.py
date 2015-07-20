@@ -31,23 +31,27 @@ yprime = Symbol('yprime')
 z = Symbol('z')
 zprime = Symbol('zprime')
 
-x0 = Symbol('x0')
-xprime0 = Symbol('xprime0')
-y0 = Symbol('y0')
-yprime0 = Symbol('yprime0')
-z0 = Symbol('z0')
-zprime0 = Symbol('zprime0')
+## Needed for my old formalism, zzz
+#x0 = Symbol('x0')
+#xprime0 = Symbol('xprime0')
+#y0 = Symbol('y0')
+#yprime0 = Symbol('yprime0')
+#z0 = Symbol('z0')
+#zprime0 = Symbol('zprime0')
+
+##m = 1.67262178*10**-27 # mass of proton
+#m = Symbol('m') # arbitrary mass
+#
+#q = Symbol('q')
+#p = Symbol('p')
+#g = Symbol('g')
+#t = Symbol('t')
+## end zzz
 
 
-#m = 1.67262178*10**-27 # mass of proton
-m = Symbol('m') # arbitrary mass
-
-q = Symbol('q')
-p = Symbol('p')
-g = Symbol('g')
 l = Symbol('l') # arbitrary length
 k = Symbol('k')
-t = Symbol('t')
+
 
 ## Hamiltonians
 #ems way
@@ -66,19 +70,6 @@ quadhamdefocus = -l/2*(-k**2*(qx**2-qy**2)+px**2+py**2+pz**2) # (Ems formalism),
 
 ###################################### Operators and transforms here
 def lieop(f,g):
-
-    # The old way only one dim
-#    dfdq = f.diff(q) # These four rows can be further developed to support diff for all three qs and three ps
-#    dfdp = f.diff(p)
-#    dgdq = g.diff(q)
-#    dgdp = g.diff(p)
-#    sumterm = dfdq*dgdp-dfdp*dgdq
-#
-#    i, a, b = symbols('i a b', integer=True)
-    #colfcolg = summation(sumterm, (i,a,b))
-
-    # New way all three dims
-#    gradf = gradient(f,qi) # gradient isn't available
     dfdqx = f.diff(qx) 
     dfdpx = f.diff(px)
     dgdqx = g.diff(qx)
@@ -103,29 +94,32 @@ def lieop(f,g):
 
 
 ## Lie transformation
-def lietransform(ham, vof0, t, order):
+def lietransform(ham, vof0, order):#,t):, #zzz
     voft = vof0
     for i in range(1,order+1):
         lieterm = simplify(lieop(ham,vof0))
         for j in range(0,i-1):
             lieterm = simplify(lieop(ham,lieterm))
 
-        #voft = voft + t**i / factorial(i) * lieterm # for my formalism
+        #voft = voft + t**i / factorial(i) * lieterm # for my formalism, #zzz
         voft = voft + lieterm / factorial(i) # for Ems formalism
 
     return voft
 
 
-# substitution
+## substitution, only needed for my formalism, zzz
 def substitution(expr):
-    expr = expr.subs(t, l*m/pz)
-    expr = expr.subs(qx, x0)
-    expr = expr.subs(px/pz, xprime)
-    expr = expr.subs(qy, y0)
-    expr = expr.subs(py/pz, yprime)
-    expr = expr.subs(q*g/pz,k**2)
-    return expr
 
+    ## For my formalism this is need, but for Ems formalism it is not needed
+    ######expr = expr.subs(q*g/pz,k**2) # "Wrong definition" from accelerator recipes
+    #expr = expr.subs(qx, x0)
+    #expr = expr.subs(qy, y0)
+    #expr = expr.subs(px/pz, xprime)
+    #expr = expr.subs(py/pz, yprime)
+    #expr = expr.subs(q*g/pz,k) # Definition from Wille
+    #expr = expr.subs(t, l*m/pz)
+    return expr
+## end zzz
 
 
 
@@ -258,7 +252,7 @@ def removeprefixones(expr): # still in an early form, BUG: it removes 1.0 if the
 #
 ### Lie transformation
 ## old version
-#def simplelietransform(ham, vof0, t, order):
+#def simplelietransform(ham, vof0, t, order): #, zzz
 #    voft = vof0
 #    for i in range(1,order+1):
 #        lieterm = simplify(simplelieop(ham,vof0))
@@ -270,7 +264,7 @@ def removeprefixones(expr): # still in an early form, BUG: it removes 1.0 if the
 #        voft = voft + lieterm / factorial(i) # for Ems formalism
 #
 #    return voft
-#
+### end zzz
 #
 #f = Function('f')(q,p)
 #g = Function('g')(q,p)
@@ -278,7 +272,7 @@ def removeprefixones(expr): # still in an early form, BUG: it removes 1.0 if the
 ##g = Function('g')(qx,qy,qz,px,py,pz)
 ##j = Symbol('j') # order
 #j = 2
-#result = simplelietransform(f, g, t, j) # v[0] is for q
+#result = simplelietransform(f, g, t, j) # v[0] is for q # zzz
 #print result
 
 
@@ -288,7 +282,7 @@ def removeprefixones(expr): # still in an early form, BUG: it removes 1.0 if the
 
 
 ##################### Classes and elements
-## Old functions
+## Old functions, zzz
 #def xfunFromHam(ham, order):
 #    transresultqx = lietransform(ham, v[0], t, order)
 #    xofl = substitution(transresultqx)
@@ -300,12 +294,13 @@ def removeprefixones(expr): # still in an early form, BUG: it removes 1.0 if the
 #    xprimeofl = simplify(transresultpx) # for Ems formalism
 #    xprimeofl = substitution(xprimeofl)
 #    return xprimeofl
+## end zzz
 
 ## New more generalized function
 def funFromHam(ham, order, vof0):
-    transresult = lietransform(ham, vof0, t, order)
+    transresult = lietransform(ham, vof0, order)
     fun = simplify(transresult) # for Ems formalism
-    fun = substitution(fun)
+    #fun = substitution(fun) # For my old formalism
     return fun
 
 class Element:
@@ -324,10 +319,10 @@ class Element:
         self.yf = self.yfun.subs([(k,kval),(l,lval)])
         self.ypf = self.yprimefun.subs([(k,kval), (l,lval)])
 
-        self.xf = lambdify([x0,y0,px,py],self.xf, "numpy")
-        self.xpf = lambdify([x0,y0,px,py],self.xpf, "numpy")
-        self.yf = lambdify([x0,y0,px,py],self.yf, "numpy")
-        self.ypf = lambdify([x0,y0,px,py],self.ypf, "numpy")
+        self.xf = lambdify((qx,px,qy,py),self.xf, "numpy")
+        self.xpf = lambdify((qx,px,qy,py),self.xpf, "numpy")
+        self.yf = lambdify((qx,px,qy,py),self.yf, "numpy")
+        self.ypf = lambdify((qx,px,qy,py),self.ypf, "numpy")
 
     def printInfo(self):
         return self.name
@@ -344,79 +339,26 @@ class Element:
 #print cos(3.14/2).evalf() # python uses radians
 
 ############# Randoms
-## Old dust
-#print ''
-#print 'Randoms...'
-
-# with arange
-#def straight():
-#    xp = np.arange(0,1)        
-#    x = np.arange(-0.05,0.06,0.01) #x and xp for when xp is 0
-#    return x,xp
-#
-#def scanned():
-#    xp = np.arange(-0.0001,0.0001,0.00001)
-#    x = np.arange(-0.05,0.06,0.01)     # x and xp for when xp is scanned
-#    return x,xp
-#                            
-#def randomed():
-#    x = []
-#    for a in range (0, 10):
-#        x.append(random.uniform(-0.05, 0.05))
-#    
-#    xp = []
-#    for a in range (0, 10):
-#        xp.append(random.uniform(-0.00001, 0.00001)) #x and xp dfor random values
-#    return x,xp
-#                                                                                
-#def gaussian():
-#    x = []
-#    for a in range (0, 10):
-#        x.append(random.gauss(0, 0.01))
-#    xp = []
-#    for a in range (0, 10):
-#        xp.append(random.gauss(0, 0.00001))
-#    return x,xp
-
-## New stuff
 def straight(particles):
-    xp = np.linspace(0,0,particles)        
     x = np.linspace(-1,1,particles) #x and xp for when xp is 0
-    return x,xp
+    xp = np.linspace(0,0,particles)
+    y = np.linspace(-1,1,particles) #y and yp for when yp is 0
+    yp = np.linspace(0,0,particles)
+    return x,xp,y,yp
 
 def scanned(particles):
-    xp = np.linspace(-0.0001,0.0001,particles)
     x = np.linspace(-0.05,0.05,particles)     # x and xp for when xp is scanned
-    return x,xp
- 
- # old should not be used                           
+    xp = np.linspace(-0.0001,0.0001,particles)
+    y = np.linspace(-0.05,0.05,particles)     # y and yp for when yp is scanned
+    yp = np.linspace(-0.0001,0.0001,particles)
+    return x,xp,y,yp
+                           
 def randomed(particles):
-    # new
     x = [random.uniform(-0.05, 0.05) for _ in xrange(particles)]
     xp = [random.uniform(-0.00001, 0.00001) for _ in xrange(particles)]
-    # old
-    #x = []
-    #for a in range (0, nbrofparticles):
-    #    x.append(random.uniform(-0.05, 0.05))
-    #
-    #xp = []
-    #for a in range (0, nbrofparticles):
-    #    xp.append(random.uniform(-0.00001, 0.00001)) #x and xp dfor random values
-    return x,xp
- 
-# slow                                                                               
-#def gaussian():
-    # new
-    #x = [random.gauss(0, 0.01) for _ in xrange(nbrofparticles)]
-    #xp = [random.gauss(0, 0.00001) for _ in xrange(nbrofparticles)]
-    # old
-    #x = []
-    #for a in range (0, nbrofparticles):
-    #    x.append(random.gauss(0, 0.01))
-    #xp = []
-    #for a in range (0, nbrofparticles):
-    #    xp.append(random.gauss(0, 0.00001))
-    #return x,xp
+    y = [random.uniform(-0.05, 0.05) for _ in xrange(particles)]
+    yp = [random.uniform(-0.00001, 0.00001) for _ in xrange(particles)]
+    return x,xp,y,yp
 
 def gaussian(particles):
     x = np.random.normal(0,0.001,particles)
@@ -425,37 +367,14 @@ def gaussian(particles):
     yp = np.random.normal(0,0.000001,particles)
     return x,xp,y,yp
 
-##print 'straight:', straight(nbrofparticles)
-##print 'scanned:', scanned(nbrofparticles)
-##print 'randomed:', randomed(nbrofparticles)
-#print 'gaussian:', gaussian(nbrofparticles)
-
-## Multiple particles and lattice construction
+################## Multiple particles and lattice construction
 print 'Multiple particles and lattice construction...'
-
-
-order = 5
-myK = 0.001
-myQuadL = 0.5
-myDriftL = 1.83
-
-myQuad = Element('quad', quadham, myK, myQuadL, order)
-myDrift = Element('drift', driftham, 0, myDriftL, order)
-
-lattice = list()
-lattice.append(myQuad)
-lattice.append(myDrift)
-#print lattice[0].name
-#print lattice[1].name
 
 def evalLattice(lattice,(xin,xpin,yin,ypin)):
     xout, xpout, yout, ypout = xin,xpin,yin,ypin
     for elem in lattice:
         xout, xpout, yout, ypout = elem.evaluate((xout,xpout,yout,ypout))
     return xout, xpout, yout, ypout
-
-#print 'evalLattice:',evalLattice(lattice,([1],[0]))
-#print 'evalLattice with mul particles',evalLattice(lattice,(mulx,mulxp))
 
 ##### Saved and loaded data
 datamode = raw_input('Save or load data (S/l):')
@@ -482,10 +401,10 @@ if datamode == 's':
 elif datamode == 'l':
     try:
         x, xp, y, yp, alpha, beta, epsilon = np.loadtxt(datafile,unpack = True)
+        nbrofparticles = len(x)
     except:
         print 'Bad datafile!'
         quit()
-    #print stx, stxp, scx, scxp, rax, raxp, gax, gaxp
 
 ###### eval data, lattice defined above
 #print 'Straight...'
@@ -511,9 +430,18 @@ elif datamode == 'l':
 
 ##### FODO
 print 'FODO...'
-fF = Element('quad', quadham, myK, myQuadL, order)
+order = 15
+myKsquared = 0.0001 # Wille and lie formalism, with Ems this is myK
+myK = sqrt(myKsquared)  # Wille and lie formalism, with Ems this is sqrt(myK)
+myKfocus = myK
+myKdefocus = -myK
+myfQuadL = 0.05 # If FODOF cells set this length to half of mydQuadL
+mydQuadL = 0.05
+myDriftL = 2
+
+fF = Element('quadfocus', quadham, myKfocus, myfQuadL, order)
 oO1 = Element('drift', driftham, 0, myDriftL, order)
-dD = Element('quaddefocus', quadhamdefocus, myK, myQuadL, order)
+dD = Element('quaddefocus', quadhamdefocus, myKdefocus, mydQuadL, order)
 oO2 = Element('drift', driftham, 0, myDriftL, order)
 
 fodoLattice = list()
@@ -524,17 +452,18 @@ for i in range(nbroffodos):
     fodoLattice.append(oO1)
     fodoLattice.append(dD)
     fodoLattice.append(oO2)
+    #fodoLattice.append(fF)
 
 # input from randoms and loads above
 
 #stxoFODO, stxpoFODO = evalLattice(fodoLattice,(stx,stxp))
-xoFODO, xpoFODO, yoFODO, ypoFODO = evalLattice(fodoLattice,(x,y,xp,yp)) # Calculate the output values
+xoFODO, xpoFODO, yoFODO, ypoFODO = evalLattice(fodoLattice,(x,xp,y,yp)) # Calculate the output values
 
 #print 'Output x,y,xp and yp:', xoFODO, yoFODO, xpoFODO, ypoFODO
 
 ######## Print phase space
 print 'Plotting...'
-def plotPhaseSpace(x,y,xp,yp):
+def plotPhaseSpace(x,xp,y,yp):
     plt.subplot(121)
     plt.plot(x,xp,'ro')
     plt.xlabel('x')
@@ -547,15 +476,16 @@ def plotPhaseSpace(x,y,xp,yp):
 
     plt.show()
 
+#plotPhaseSpace(x, y, xp, yp) # plots the input values
 plotPhaseSpace(xoFODO, xpoFODO, yoFODO, ypoFODO)
 
 ######## Output
-def saveOutput(x,xp,y,yp,nbrofparticles):
+def saveOutput(x,xp,y,yp):
     outputfile = raw_input('Enter file for output data:')
     if len(outputfile) < 1 : outputfile = "out.txt"
     if len(outputfile) > 0:
         dt = np.dtype([('x', 'd'), ('xp', 'd'), ('y', 'd'), ('yp', 'd'), ('alpha', 'd'), ('beta', 'd'), ('epsilon', 'd')])
-        a = np.zeros(nbrofparticles, dt)
+        a = np.zeros(len(x), dt)
         a['x'] = x
         a['xp'] = xp
         a['y'] = y
@@ -566,7 +496,7 @@ def saveOutput(x,xp,y,yp,nbrofparticles):
     
         np.savetxt(outputfile, a, '%10s')
 
-saveOutput(xoFODO, xpoFODO, yoFODO, ypoFODO, nbrofparticles)
+saveOutput(xoFODO, xpoFODO, yoFODO, ypoFODO)
 
 ##### Focal length
 #print ''
@@ -597,6 +527,8 @@ saveOutput(xoFODO, xpoFODO, yoFODO, ypoFODO, nbrofparticles)
 
 # See first comment
 
+# Merge with Anton's code so that I can easily double check that results are correct. New name is needed as well; lie + Accelerator-?code? = ??????? particle tracker?   
+
 ##### Comments and stuff not to forget
 # 1. How good the approximation is: Well the criteria is that the determinant of the Jacobian has to be 1. You can decide to truncate at some order with an error that is a fraction of 1 (like 10e-6 or 10e-4).
 # The closer the determinant is to 1 the most accurate will be your approximation. -> make some code to calculate the Jacobian and see how much it differs from 1. Maybe perhaps have it find the lowest order with acceptable errors
@@ -604,3 +536,7 @@ saveOutput(xoFODO, xpoFODO, yoFODO, ypoFODO, nbrofparticles)
 # 2. Seems like the expansion doesn't hold for k > 1...
 
 # 3. Changed to a minus sign in front of the qy**2 in the Ham to get proper focus/defocus
+
+# 4. Arguments should always be ordered x,xp,y,yp!
+
+# 5. Python uses radians, i.e # print cos(3.14/2).evalf()
