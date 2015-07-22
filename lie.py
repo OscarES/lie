@@ -58,6 +58,8 @@ k = Symbol('k')
 driftham = -l/2*(px**2 + py**2 + pz**2)
 quadham = -l/2*(k**2*(qx**2-qy**2)+px**2+py**2+pz**2) # (Ems formalism), replace k with -k for defocus. Without quad term in z dir
 quadhamdefocus = -l/2*(-k**2*(qx**2-qy**2)+px**2+py**2+pz**2) # (Ems formalism), replace k with -k for defocus. Without quad term in z dir
+sextupoleham = -l/2*(2/3*k*(qx**3-3*qx*qy**2)+(px**2+py**2)) # should the ps' perhaps be divided by 2 as in nonlinear2013_3.pdf? That division is assumed to be the l/2 in the beginning
+octupoleham = -l/2*(2/4*k*(qx**4-6*qx**2*qy**2+qy**4)+(px**2+py**2)) # same decision as above
 
 #old way
 #driftham = px**2 / (2*m) + py**2 / (2*m) + pz**2 / (2*m) # for my formalism
@@ -528,6 +530,8 @@ saveOutput(xoFODO, xpoFODO, yoFODO, ypoFODO)
 # See first comment
 
 # Merge with Anton's code so that I can easily double check that results are correct. New name is needed as well; lie + Accelerator-?code? = ??????? particle tracker?   
+
+# Make a lattice class with funs: add(), evaluate(x,xp,y,yp), __init__()
 
 ##### Comments and stuff not to forget
 # 1. How good the approximation is: Well the criteria is that the determinant of the Jacobian has to be 1. You can decide to truncate at some order with an error that is a fraction of 1 (like 10e-6 or 10e-4).
