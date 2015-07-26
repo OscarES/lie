@@ -440,11 +440,20 @@ myKdefocus = -myK
 myfQuadL = 0.05 # If FODOF cells set this length to half of mydQuadL
 mydQuadL = 0.05
 myDriftL = 2
+mySextuL = 0.05
+myOctuL = 0.05
+
+
 
 fF = Element('quadfocus', quadham, myKfocus, myfQuadL, order)
 oO1 = Element('drift', driftham, 0, myDriftL, order)
 dD = Element('quaddefocus', quadhamdefocus, myKdefocus, mydQuadL, order)
 oO2 = Element('drift', driftham, 0, myDriftL, order)
+
+## higher order elements
+#sextupole = Element('sextupole', sextupoleham, myK, mySextuL, order)
+#octupole = Element('octupole', octupoleham, myK, myOctuL, order)
+
 
 fodoLattice = list()
 nbroffodos = raw_input('Enter number of FODO cells:')
@@ -454,7 +463,11 @@ for i in range(nbroffodos):
     fodoLattice.append(oO1)
     fodoLattice.append(dD)
     fodoLattice.append(oO2)
+
     #fodoLattice.append(fF)
+
+    #fodoLattice.append(sextupole)
+    #fodoLattice.append(octupole)
 
 # input from randoms and loads above
 
