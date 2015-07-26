@@ -1,3 +1,4 @@
+from __future__ import division # needed for 1/2 = 0.5
 import numpy as np
 from scipy.misc import *
 #from scipy.linalg import *
@@ -7,6 +8,7 @@ from sympy import *
 import math
 import random
 import matplotlib.pyplot as plt
+
 #printing.init_printing(use_latex='mathjax') # latex output in ipython notebook
 #from sympy import Function, Symbol, symbols, summation
 #from sympy.mpmath import *
@@ -58,7 +60,7 @@ k = Symbol('k')
 driftham = -l/2*(px**2 + py**2 + pz**2)
 quadham = -l/2*(k**2*(qx**2-qy**2)+px**2+py**2+pz**2) # (Ems formalism), replace k with -k for defocus. Without quad term in z dir
 quadhamdefocus = -l/2*(-k**2*(qx**2-qy**2)+px**2+py**2+pz**2) # (Ems formalism), replace k with -k for defocus. Without quad term in z dir
-sextupoleham = -l/2*(2/3*k*(qx**3-3*qx*qy**2)+(px**2+py**2)) # should the ps' perhaps be divided by 2 as in nonlinear2013_3.pdf? That division is assumed to be the l/2 in the beginning
+sextupoleham = -l/2*(2/3*k*(qx**3-3*qx*qy**2)+(px**2+py**2)) # should the ps' perhaps be divided by 2 as in nonlinear2013_3.pdf? That division is assumed to be the l/2 in the beginning, 
 octupoleham = -l/2*(2/4*k*(qx**4-6*qx**2*qy**2+qy**4)+(px**2+py**2)) # same decision as above
 
 #old way
@@ -180,6 +182,41 @@ def removeprefixones(expr): # still in an early form, BUG: it removes 1.0 if the
 
 
 ########### How many terms in the taylor series... Remake this code so that it finds the optimal order for the run (determinant of the Jacobian differ by less than 10^-5 or 10^-6 from 1) Use and print this order. The suggested changes should be inserted into the element class so that each element has a unique order. Or maybe The optimal order for each pole should be calculated and then just inserted, i.e. 1 for drift and ...
+def findOrder(ham,K,L,acceptableError): # Since this also find the functions maybe it should also return them. Since why do the same thing twice?
+    if K*L > 1:
+        print 'K*L larger than 1!'
+        quit()
+    order = 1
+    while True:
+
+        xfun = funFromHam(ham, order, qx)
+        xprimefun = funFromHam(ham, order, px)
+        yfun = funFromHam(ham, order, qy)
+        yprimefun = funFromHam(ham, order, py)
+
+        xf = xfun.subs([(k,K),(l,L)])
+        xpf = xprimefun.subs([(k,K), (l,L)])
+        yf = yfun.subs([(k,K),(l,L)])
+        ypf = yprimefun.subs([(k,K), (l,L)])
+
+        J = np.array([[xf.diff(qx),xf.diff(qy),xf.diff(px),xf.diff(py)],[yf.diff(qx),yf.diff(qy),yf.diff(px),yf.diff(py)],[xpf.diff(qx),xpf.diff(qy),xpf.diff(px),xpf.diff(py)],[ypf.diff(qx),ypf.diff(qy),ypf.diff(px),ypf.diff(py)]]) # Note that here I deviate from the normal order x,xp,y,yp
+
+        ## Approximative qx and qy set to 0.1 (px and py always disapper in diffs but if needed the same could be done to them)
+        ## Maybe the approxOffset should be set to the mean of the Gaussian
+        approxOffsetQ = 0.01
+        approxOffsetP = 0.00001
+        for i in range(0,4):
+            for j in range(0,4):
+                J[i,j] = J[i,j].subs([(qx,approxOffsetQ),(qy,approxOffsetQ),(px,approxOffsetP),(py,approxOffsetP)])
+
+        detJ = np.linalg.det(J)
+
+        error = detJ - 1
+        if abs(error) < acceptableError:
+            break
+        order += 1
+
+    return order
 #I = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 #minusI = np.zeros([3,3])-I
 ##print minusI
@@ -240,7 +277,7 @@ def removeprefixones(expr): # still in an early form, BUG: it removes 1.0 if the
 ## As long as detJ and m12 gives: 1+ordo(order+1) it should be fine right?
 ## But 1+ordo(2) is the result for order 1, can that really work? Shouldn't the order be higher in order to describe the quadrupole?
 #
-### arbitrary functions and order into lietrans, one dim for simplicity
+########## arbitrary functions and order into lietrans, one dim for simplicity
 #print ''
 #print 'arbitrary functions into lietransformation...'
 #def simplelieop(f,g):
@@ -432,7 +469,7 @@ elif datamode == 'l':
 
 ##### FODO
 print 'FODO...'
-order = 15
+#order = 15
 myKsquared = 0.0001 # Wille and lie formalism, with Ems this is myK
 myK = sqrt(myKsquared)  # Wille and lie formalism, with Ems this is sqrt(myK)
 myKfocus = myK
@@ -443,12 +480,18 @@ myDriftL = 2
 mySextuL = 0.05
 myOctuL = 0.05
 
+acceptableError = 1e-9
+driftOrder = findOrder(driftham,0,myDriftL,acceptableError)
+quadOrderf = findOrder(quadham,myKfocus,myfQuadL,acceptableError)
+quadOrderd = findOrder(quadhamdefocus,myKdefocus,mydQuadL,acceptableError)
+
+#sextuOrder = findOrder(sextupoleham,myK,10*myfQuadL,acceptableError)
 
 
-fF = Element('quadfocus', quadham, myKfocus, myfQuadL, order)
-oO1 = Element('drift', driftham, 0, myDriftL, order)
-dD = Element('quaddefocus', quadhamdefocus, myKdefocus, mydQuadL, order)
-oO2 = Element('drift', driftham, 0, myDriftL, order)
+fF = Element('quadfocus', quadham, myKfocus, myfQuadL, quadOrderf)
+oO1 = Element('drift', driftham, 0, myDriftL, driftOrder)
+dD = Element('quaddefocus', quadhamdefocus, myKdefocus, mydQuadL, quadOrderd)
+oO2 = Element('drift', driftham, 0, myDriftL, driftOrder)
 
 ## higher order elements
 #sextupole = Element('sextupole', sextupoleham, myK, mySextuL, order)
