@@ -279,6 +279,7 @@ oO1 = Element('drift', driftham, 0, myDriftL, driftOrder)
 dD = Element('quaddefocus', quadhamdefocus, myKdefocus, mydQuadL, quadOrderd)
 oO2 = Element('drift', driftham, 0, myDriftL, driftOrder)
 
+
 ## higher order elements
 #sextupole = Element('sextupole', sextupoleham, myK, mySextuL, order)
 #octupole = Element('octupole', octupoleham, myK, myOctuL, order)
