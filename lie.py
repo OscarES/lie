@@ -163,6 +163,20 @@ class Element:
 
 #print cos(3.14/2).evalf() # python uses radians
 
+## Plot def
+def plotPhaseSpace(x,xp,y,yp):
+    plt.subplot(121)
+    plt.plot(x,xp,'ro')
+    plt.xlabel('x')
+    plt.ylabel('xp')
+    
+    plt.subplot(122)
+    plt.plot(y,yp,'ro')
+    plt.xlabel('y')
+    plt.ylabel('yp')
+
+    plt.show()
+
 ############# Randoms
 def straight(particles):
     x = np.linspace(-1,1,particles) #x and xp for when xp is 0
@@ -192,6 +206,26 @@ def gaussian(particles):
     yp = np.random.normal(0,0.000001,particles)
     return x,xp,y,yp
 
+def gaussiantwiss(particles, alpha, beta, epsilon):
+    xi = np.random.normal(0,1,particles)
+    xip = np.random.normal(0,1,particles)
+
+    M = np.array([
+        [1/sqrt(beta*epsilon), 0],
+        [alpha/sqrt(beta*epsilon), sqrt(beta/epsilon)]
+        ])
+
+    Minv = np.linalg.inv(M)
+
+    x = np.zeros(particles)
+    xp = np.zeros(particles)
+
+    for i in range(particles):
+        x[i] = Minv[0,0]*xi[i] + Minv[0,1]*xip[i]
+        xp[i] = Minv[1,0]*xi[i] + Minv[1,1]*xip[i]
+
+    return x,xp
+
 ################## Multiple particles and lattice construction
 print 'Multiple particles and lattice construction...'
 
@@ -205,27 +239,66 @@ def evalLattice(lattice,(xin,xpin,yin,ypin)):
 datamode = raw_input('Save or load data (S/l):')
 if datamode != 's' and datamode != 'l':
     datamode = 's'
-datafile = raw_input('Enter file name:')
-if len(datafile) < 1 : datafile = "test.txt"
+datafilepart = raw_input('Enter particle file name:')
+if len(datafilepart) < 1 : datafilepart = "inpart.txt"
+
+datafiletwiss = raw_input('Enter twiss file name:')
+if len(datafiletwiss) < 1 : datafiletwiss = "intwiss.txt"
+
+dta = np.dtype([('x', 'd'), ('xp', 'd'), ('y', 'd'), ('yp', 'd')])
+dtb = np.dtype([('alpha_x', 'd'), ('beta_x', 'd'), ('epsilon_x', 'd'), ('alpha_y', 'd'), ('beta_y', 'd'), ('epsilon_y', 'd')])
+
 if datamode == 's':
     nbrofparticles = raw_input('Enter number of particles:')
     nbrofparticles = int(nbrofparticles)
-    x, xp, y, yp = gaussian(nbrofparticles)
-    dt = np.dtype([('x', 'd'), ('xp', 'd'), ('y', 'd'), ('yp', 'd'), ('alpha', 'd'), ('beta', 'd'), ('epsilon', 'd')])
-    a = np.zeros(nbrofparticles, dt)
+    alpha_x = raw_input('Enter alpha_x:') # set this to 0
+    if len(alpha_x) < 1 : alpha_x = "0"
+    alpha_x = float(alpha_x)
+    beta_x = raw_input('Enter beta_x:') # set this to 0.001
+    if len(beta_x) < 1 : beta_x = "0.001"
+    beta_x = float(beta_x)
+    epsilon_x = raw_input('Enter epsilon_x:') # set this to 0.000001
+    if len(epsilon_x) < 1 : epsilon_x = "0.000001"
+    epsilon_x = float(epsilon_x)
+
+    alpha_y = raw_input('Enter alpha_y:') # set this to 0
+    if len(alpha_y) < 1 : alpha_y = "0"
+    alpha_y = float(alpha_y)
+    beta_y = raw_input('Enter beta_y:') # set this to 0.001
+    if len(beta_y) < 1 : beta_y = "0.001"
+    beta_y = float(beta_y)
+    epsilon_y = raw_input('Enter epsilon_y:') # set this to 0.000001
+    if len(epsilon_y) < 1 : epsilon_y = "0.000001"
+    epsilon_y = float(epsilon_y)
+    
+    #x, xp, y, yp = gaussian(nbrofparticles) # uncoupled x and xp, y and yp
+    x, xp = gaussiantwiss(nbrofparticles,alpha_x,beta_x,epsilon_x) # coupled x and xp
+    y, yp = gaussiantwiss(nbrofparticles,alpha_y,beta_y,epsilon_y) # coupled y and yp
+    
+    #plotPhaseSpace(x,xp,y,yp)
+
+    a = np.zeros(nbrofparticles, dta)
+    b = np.zeros(1,dtb)
+
     a['x'] = x
     a['xp'] = xp
     a['y'] = y
     a['yp'] = yp
-    a['alpha'] = 0
-    a['beta'] = 0
-    a['epsilon'] = 0
+    b['alpha_x'] = alpha_x
+    b['beta_x'] = beta_x
+    b['epsilon_x'] = epsilon_x
+    b['alpha_y'] = alpha_y
+    b['beta_y'] = beta_y
+    b['epsilon_y'] = epsilon_y
 
-    np.savetxt(datafile, a, '%10s')
+
+    np.savetxt(datafilepart, a, '%10s')
+    np.savetxt(datafiletwiss, b, '%10s')
 
 elif datamode == 'l':
     try:
-        x, xp, y, yp, alpha, beta, epsilon = np.loadtxt(datafile,unpack = True)
+        x, xp, y, yp= np.loadtxt(datafilepart,unpack = True)
+        alpha_x, beta_x, epsilon_x, alpha_y, beta_y, epsilon_y = np.loadtxt(datafiletwiss,unpack = True)
         nbrofparticles = len(x)
     except:
         print 'Bad datafile!'
@@ -308,20 +381,6 @@ xoFODO, xpoFODO, yoFODO, ypoFODO = evalLattice(fodoLattice,(x,xp,y,yp)) # Calcul
 
 ######## Print phase space
 print 'Plotting...'
-def plotPhaseSpace(x,xp,y,yp):
-    plt.subplot(121)
-    plt.plot(x,xp,'ro')
-    plt.xlabel('x')
-    plt.ylabel('xp')
-    
-    plt.subplot(122)
-    plt.plot(y,yp,'ro')
-    plt.xlabel('y')
-    plt.ylabel('yp')
-
-    plt.show()
-
-#plotPhaseSpace(x, y, xp, yp) # plots the input values
 plotPhaseSpace(xoFODO, xpoFODO, yoFODO, ypoFODO)
 
 ######## Output
