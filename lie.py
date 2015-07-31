@@ -132,6 +132,7 @@ class Element:
     def __init__(self, name, ham, kval, lval, order):
         self.name = name
         self.ham = ham
+        self.L = lval
 
         # Same this done 4 times, time for a new function?
         self.xfun = funFromHam(ham, order, qx)
@@ -229,11 +230,33 @@ def gaussiantwiss(particles, alpha, beta, epsilon):
 ################## Multiple particles and lattice construction
 print 'Multiple particles and lattice construction...'
 
+def rms(a):
+    sq = np.power(a,2)
+    me = np.mean(sq)
+    root = np.sqrt(me)
+    return root
+
 def evalLattice(lattice,(xin,xpin,yin,ypin)):
     xout, xpout, yout, ypout = xin,xpin,yin,ypin
+    envx = np.zeros((len(lattice)+1,2))
+    envy = np.zeros((len(lattice)+1,2))
+
+    envx[0][1] = rms(xin)
+    envy[0][1] = rms(yin)
+
+    elementnbr = 1
+
     for elem in lattice:
         xout, xpout, yout, ypout = elem.evaluate((xout,xpout,yout,ypout))
-    return xout, xpout, yout, ypout
+        envx[elementnbr][0] = envx[elementnbr-1][0] + elem.L
+        envx[elementnbr][1] = rms(xout)
+
+        envy[elementnbr][0] = envy[elementnbr-1][0] + elem.L
+        envy[elementnbr][1] = rms(yout)
+
+        elementnbr += 1
+
+    return xout, xpout, yout, ypout, envx, envy
 
 ##### Saved and loaded data
 datamode = raw_input('Save or load data (S/l):')
@@ -250,6 +273,7 @@ dtb = np.dtype([('alpha_x', 'd'), ('beta_x', 'd'), ('epsilon_x', 'd'), ('alpha_y
 
 if datamode == 's':
     nbrofparticles = raw_input('Enter number of particles:')
+    if len(nbrofparticles) < 1 : nbrofparticles = "1000"
     nbrofparticles = int(nbrofparticles)
     alpha_x = raw_input('Enter alpha_x:') # set this to 0
     if len(alpha_x) < 1 : alpha_x = "0"
@@ -275,7 +299,7 @@ if datamode == 's':
     x, xp = gaussiantwiss(nbrofparticles,alpha_x,beta_x,epsilon_x) # coupled x and xp
     y, yp = gaussiantwiss(nbrofparticles,alpha_y,beta_y,epsilon_y) # coupled y and yp
     
-    #plotPhaseSpace(x,xp,y,yp)
+    plotPhaseSpace(x,xp,y,yp)
 
     a = np.zeros(nbrofparticles, dta)
     b = np.zeros(1,dtb)
@@ -304,35 +328,14 @@ elif datamode == 'l':
         print 'Bad datafile!'
         quit()
 
-###### eval data, lattice defined above
-#print 'Straight...'
-#print 'Input x and xp:', stx, stxp
-#stxo, stxpo = evalLattice(lattice,(stx,stxp))
-#print 'Output x and xp:', stxo, stxpo
-#
-#print 'Scanned...'
-#print 'Input x and xp:', scx, scxp
-#scxo, scxpo = evalLattice(lattice,(scx,scxp))
-#print 'Output x and xp:', scxo, scxpo
-#
-#print 'Random...'
-#print 'Input x and xp:', rax, raxp
-#raxo, raxpo = evalLattice(lattice,(rax,raxp))
-#print 'Output x and xp:', raxo, raxpo
-
-#print 'Gaussian...'
-#print 'Input x and xp:', x, xp
-#gaxo, gaxpo = evalLattice(lattice,(x,xp))
-#print 'Output x and xp:', gaxo, gaxpo
 
 
 ##### FODO
 print 'FODO...'
-#order = 15
 myKsquared = 0.0001 # Wille and lie formalism, with Ems this is myK
 myK = sqrt(myKsquared)  # Wille and lie formalism, with Ems this is sqrt(myK)
 myKfocus = myK
-myKdefocus = -myK
+myKdefocus = -myK # take this times 100 to get an interesting envelope
 myfQuadL = 0.05 # If FODOF cells set this length to half of mydQuadL
 mydQuadL = 0.05
 myDriftL = 2
@@ -360,6 +363,7 @@ oO2 = Element('drift', driftham, 0, myDriftL, driftOrder)
 
 fodoLattice = list()
 nbroffodos = raw_input('Enter number of FODO cells:')
+if len(nbroffodos) < 1 : nbroffodos = "10"
 nbroffodos = int(nbroffodos)
 for i in range(nbroffodos):
     fodoLattice.append(fF)
@@ -375,32 +379,54 @@ for i in range(nbroffodos):
 # input from randoms and loads above
 
 #stxoFODO, stxpoFODO = evalLattice(fodoLattice,(stx,stxp))
-xoFODO, xpoFODO, yoFODO, ypoFODO = evalLattice(fodoLattice,(x,xp,y,yp)) # Calculate the output values
-
-#print 'Output x,y,xp and yp:', xoFODO, yoFODO, xpoFODO, ypoFODO
+xoFODO, xpoFODO, yoFODO, ypoFODO, envx, envy = evalLattice(fodoLattice,(x,xp,y,yp)) # Calculate the output values
 
 ######## Print phase space
 print 'Plotting...'
+
+def plotEnvelope(envx,envy):
+    plt.subplot(121)
+    plt.plot(envx[:,0],envx[:,1],'ro')
+    plt.xlabel('z')
+    plt.ylabel('Envelope in x')
+
+    plt.subplot(122)
+    plt.plot(envy[:,0],envy[:,1],'ro')
+    plt.xlabel('z')
+    plt.ylabel('Envelope in y')
+
+    plt.show()
+
 plotPhaseSpace(xoFODO, xpoFODO, yoFODO, ypoFODO)
+plotEnvelope(envx,envy)
 
 ######## Output
-def saveOutput(x,xp,y,yp):
-    outputfile = raw_input('Enter file for output data:')
+def saveOutput(x,xp,y,yp,alpha_x,beta_x,epsilon_x,alpha_y,beta_y,epsilon_y):
+    outputfile = raw_input('Enter file for output particle data:')
     if len(outputfile) < 1 : outputfile = "out.txt"
-    if len(outputfile) > 0:
-        dt = np.dtype([('x', 'd'), ('xp', 'd'), ('y', 'd'), ('yp', 'd'), ('alpha', 'd'), ('beta', 'd'), ('epsilon', 'd')])
-        a = np.zeros(len(x), dt)
-        a['x'] = x
-        a['xp'] = xp
-        a['y'] = y
-        a['yp'] = yp
-        a['alpha'] = 0
-        a['beta'] = 0
-        a['epsilon'] = 0
+    outputtwiss = raw_input('Enter file for output twiss data:')
+    if len(outputtwiss) < 1 : outputtwiss = "outtwiss.txt"
     
-        np.savetxt(outputfile, a, '%10s')
+    dt = np.dtype([('x', 'd'), ('xp', 'd'), ('y', 'd'), ('yp', 'd')])
+    dtb = np.dtype([('alpha_x', 'd'), ('beta_x', 'd'), ('epsilon_x', 'd'), ('alpha_y', 'd'), ('beta_y', 'd'), ('epsilon_y', 'd')])
+    a = np.zeros(len(x), dt)
+    b = np.zeros(1,dtb)
+    a['x'] = x
+    a['xp'] = xp
+    a['y'] = y
+    a['yp'] = yp
 
-saveOutput(xoFODO, xpoFODO, yoFODO, ypoFODO)
+    b['alpha_x'] = alpha_x
+    b['beta_x'] = beta_x
+    b['epsilon_x'] = epsilon_x
+    b['alpha_y'] = alpha_y
+    b['beta_y'] = beta_y
+    b['epsilon_y'] = epsilon_y
+    
+    np.savetxt(outputfile, a, '%10s')
+    np.savetxt(outputtwiss, b, '%10s')
+
+saveOutput(xoFODO, xpoFODO, yoFODO, ypoFODO,alpha_x,beta_x,epsilon_x,alpha_y,beta_y,epsilon_y)
 
 ##### Focal length
 #print ''
