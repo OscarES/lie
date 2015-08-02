@@ -80,13 +80,13 @@ def lietransform(ham, vof0, order):#,t):, #zzz
             lieterm = simplify(lieop(ham,lieterm))
 
         #voft = voft + t**i / factorial(i) * lieterm # for my formalism, #zzz
-        voft = voft + lieterm / factorial(i) # for Ems formalism
+        voft = voft + lieterm / factorial(i) # for Ems formalism, shouldn't each term also 
 
     return voft
 
 
 ########### How many terms in the taylor series... Remake this code so that it finds the optimal order for the run (determinant of the Jacobian differ by less than 10^-5 or 10^-6 from 1) Use and print this order. The suggested changes should be inserted into the element class so that each element has a unique order. Or maybe The optimal order for each pole should be calculated and then just inserted, i.e. 1 for drift and ...
-def findOrder(ham,K,L,acceptableError): # Since this also find the functions maybe it should also return them. Since why do the same thing twice?
+def findOrder(ham,K,L,acceptableError,approxOffsetQ,approxOffsetP): # Since this also find the functions maybe it should also return them. Since why do the same thing twice?
     if K*L > 1:
         print 'K*L larger than 1!'
         quit()
@@ -107,8 +107,8 @@ def findOrder(ham,K,L,acceptableError): # Since this also find the functions may
 
         ## Approximative qx and qy set to 0.1 (px and py always disapper in diffs but if needed the same could be done to them)
         ## Maybe the approxOffset should be set to the mean of the Gaussian
-        approxOffsetQ = 0.01
-        approxOffsetP = 0.00001
+        #approxOffsetQ = 0.01
+        #approxOffsetP = 0.00001
         for i in range(0,4):
             for j in range(0,4):
                 J[i,j] = J[i,j].subs([(qx,approxOffsetQ),(qy,approxOffsetQ),(px,approxOffsetP),(py,approxOffsetP)])
@@ -236,6 +236,10 @@ def rms(a):
     root = np.sqrt(me)
     return root
 
+#def envelopePoint(a):
+#    stda = np.std(a)
+
+
 def evalLattice(lattice,(xin,xpin,yin,ypin)):
     xout, xpout, yout, ypout = xin,xpin,yin,ypin
     envx = np.zeros((len(lattice)+1,2))
@@ -249,7 +253,7 @@ def evalLattice(lattice,(xin,xpin,yin,ypin)):
     for elem in lattice:
         xout, xpout, yout, ypout = elem.evaluate((xout,xpout,yout,ypout))
         envx[elementnbr][0] = envx[elementnbr-1][0] + elem.L
-        envx[elementnbr][1] = rms(xout)
+        envx[elementnbr][1] = rms(xout) # is this really the envelope?
 
         envy[elementnbr][0] = envy[elementnbr-1][0] + elem.L
         envy[elementnbr][1] = rms(yout)
@@ -342,10 +346,13 @@ myDriftL = 2
 mySextuL = 0.05
 myOctuL = 0.05
 
+approxOffsetQ = max(abs(x))+3*np.std(x)+max(abs(y))+3*np.std(y)
+approxOffsetP = max(abs(xp))+3*np.std(xp)+max(abs(yp))+3*np.std(yp)
+
 acceptableError = 1e-9
-driftOrder = findOrder(driftham,0,myDriftL,acceptableError)
-quadOrderf = findOrder(quadham,myKfocus,myfQuadL,acceptableError)
-quadOrderd = findOrder(quadhamdefocus,myKdefocus,mydQuadL,acceptableError)
+driftOrder = findOrder(driftham,0,myDriftL,acceptableError,approxOffsetQ,approxOffsetP)
+quadOrderf = findOrder(quadham,myKfocus,myfQuadL,acceptableError,approxOffsetQ,approxOffsetP)
+quadOrderd = findOrder(quadhamdefocus,myKdefocus,mydQuadL,acceptableError,approxOffsetQ,approxOffsetP)
 
 #sextuOrder = findOrder(sextupoleham,myK,10*myfQuadL,acceptableError)
 
