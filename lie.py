@@ -380,9 +380,12 @@ myKfocus = myK
 myKdefocus = -myK # take this times 100 to get an interesting envelope
 myfQuadL = 0.2 # If FODOF cells set this length to half of mydQuadL
 mydQuadL = 0.4
+
 myDriftL = 0.4
-mySextuK = 0.2
+
+mySextuK = 1
 mySextuL = 0.4
+
 myOctuL = 0.05
 
 approxOffsetQ = max(abs(x))+3*np.std(x)+max(abs(y))+3*np.std(y)
@@ -425,11 +428,12 @@ for i in range(nbroffodos):
     #fodoLattice.append(sextupole)
     fodoLattice.append(oO1)
     fodoLattice.append(dD)
-    #fodoLattice.append(sextupole)
     fodoLattice.append(oO2)
 
     fodoLattice.append(fF)
 
+    #if i == 5:
+    #fodoLattice.append(sextupole)
     #fodoLattice.append(octupole)
 
 # input from randoms and loads above
@@ -439,21 +443,6 @@ xoFODO, xpoFODO, yoFODO, ypoFODO, envx, envy = evalLattice(fodoLattice,(x,xp,y,y
 
 ######## Print phase space
 print 'Plotting...'
-
-def plotEnvelope(envx,envy):
-    plt.subplot(121)
-    plt.plot(envx[:,0],envx[:,1],'ro')
-    plt.xlabel('z')
-    plt.ylabel('Envelope in x')
-
-    plt.subplot(122)
-    plt.plot(envy[:,0],envy[:,1],'ro')
-    plt.xlabel('z')
-    plt.ylabel('Envelope in y')
-
-    plt.show()
-
-
 def plotEverything(xin,xpin,yin,ypin,alpha_x,beta_x,epsilon_x,alpha_y,beta_y,epsilon_y,xo,xpo,yo,ypo,envx,envy):
     plt.figure(0)
     ax1 = plt.subplot2grid((4,3), (0,0))
