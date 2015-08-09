@@ -259,9 +259,12 @@ def evalLattice(lattice,(xin,xpin,yin,ypin)):
     return xout, xpout, yout, ypout, envx, envy
 
 ##### Saved and loaded data
-datamode = raw_input('Save or load data (S/l):')
-if datamode != 's' and datamode != 'l':
-    datamode = 's'
+datamodepart = raw_input('Save or load particles (S/l):')
+if datamodepart != 's' and datamodepart != 'l':
+    datamodepart = 's'
+datamodetwiss = raw_input('Save or load twiss (S/l):')
+if datamodepart != 's' and datamodepart != 'l':
+    datamodepart = 's'
 datafilepart = raw_input('Enter particle file name:')
 if len(datafilepart) < 1 : datafilepart = "inpart.txt"
 
@@ -271,29 +274,37 @@ if len(datafiletwiss) < 1 : datafiletwiss = "intwiss.txt"
 dta = np.dtype([('x', 'd'), ('xp', 'd'), ('y', 'd'), ('yp', 'd')])
 dtb = np.dtype([('alpha_x', 'd'), ('beta_x', 'd'), ('epsilon_x', 'd'), ('alpha_y', 'd'), ('beta_y', 'd'), ('epsilon_y', 'd')])
 
-if datamode == 's':
+if datamodepart == 's':
     nbrofparticles = raw_input('Enter number of particles:')
     if len(nbrofparticles) < 1 : nbrofparticles = "1000"
     nbrofparticles = int(nbrofparticles)
-    alpha_x = raw_input('Enter alpha_x:') # set this to 0
-    if len(alpha_x) < 1 : alpha_x = "0"
-    alpha_x = float(alpha_x)
-    beta_x = raw_input('Enter beta_x:') # set this to 0.001
-    if len(beta_x) < 1 : beta_x = "10"
-    beta_x = float(beta_x)
-    epsilon_x = raw_input('Enter epsilon_x:') # set this to 0.000001
-    if len(epsilon_x) < 1 : epsilon_x = "0.000000001"
-    epsilon_x = float(epsilon_x)
+    
 
-    alpha_y = raw_input('Enter alpha_y:') # set this to 0
-    if len(alpha_y) < 1 : alpha_y = "0"
-    alpha_y = float(alpha_y)
-    beta_y = raw_input('Enter beta_y:') # set this to 0.001
-    if len(beta_y) < 1 : beta_y = "10"
-    beta_y = float(beta_y)
-    epsilon_y = raw_input('Enter epsilon_y:') # set this to 0.000001
-    if len(epsilon_y) < 1 : epsilon_y = "0.000000001"
-    epsilon_y = float(epsilon_y)
+    if datamodetwiss == 's':
+        alpha_x = raw_input('Enter alpha_x:') # set this to 0
+        if len(alpha_x) < 1 : alpha_x = "0"
+        alpha_x = float(alpha_x)
+        beta_x = raw_input('Enter beta_x:') # set this to 0.001
+        if len(beta_x) < 1 : beta_x = "5"
+        beta_x = float(beta_x)
+        epsilon_x = raw_input('Enter epsilon_x:') # set this to 0.000001
+        if len(epsilon_x) < 1 : epsilon_x = "0.00001"
+        epsilon_x = float(epsilon_x)
+        alpha_y = raw_input('Enter alpha_y:') # set this to 0
+        if len(alpha_y) < 1 : alpha_y = "0"
+        alpha_y = float(alpha_y)
+        beta_y = raw_input('Enter beta_y:') # set this to 0.001
+        if len(beta_y) < 1 : beta_y = "5"
+        beta_y = float(beta_y)
+        epsilon_y = raw_input('Enter epsilon_y:') # set this to 0.000001
+        if len(epsilon_y) < 1 : epsilon_y = "0.00001"
+        epsilon_y = float(epsilon_y)
+    elif datamodetwiss == 'l':
+        try:
+            alpha_x, beta_x, epsilon_x, alpha_y, beta_y, epsilon_y = np.loadtxt(datafiletwiss,unpack = True)
+        except:
+            print 'Bad datafile!'
+            quit()
     
     #x, xp, y, yp = gaussian(nbrofparticles) # uncoupled x and xp, y and yp
     x, xp = gaussiantwiss(nbrofparticles,alpha_x,beta_x,epsilon_x) # coupled x and xp
@@ -319,10 +330,40 @@ if datamode == 's':
     np.savetxt(datafilepart, a, '%10s')
     np.savetxt(datafiletwiss, b, '%10s')
 
-elif datamode == 'l':
+elif datamodepart == 'l':
     try:
         x, xp, y, yp= np.loadtxt(datafilepart,unpack = True)
-        alpha_x, beta_x, epsilon_x, alpha_y, beta_y, epsilon_y = np.loadtxt(datafiletwiss,unpack = True)
+        if datamodetwiss == 'l':
+            alpha_x, beta_x, epsilon_x, alpha_y, beta_y, epsilon_y = np.loadtxt(datafiletwiss,unpack = True)
+        elif datamodetwiss == 's':
+            alpha_x = raw_input('Enter alpha_x:') # set this to 0
+            if len(alpha_x) < 1 : alpha_x = "0"
+            alpha_x = float(alpha_x)
+            beta_x = raw_input('Enter beta_x:') # set this to 0.001
+            if len(beta_x) < 1 : beta_x = "5"
+            beta_x = float(beta_x)
+            epsilon_x = raw_input('Enter epsilon_x:') # set this to 0.000001
+            if len(epsilon_x) < 1 : epsilon_x = "0.00001"
+            epsilon_x = float(epsilon_x)
+            alpha_y = raw_input('Enter alpha_y:') # set this to 0
+            if len(alpha_y) < 1 : alpha_y = "0"
+            alpha_y = float(alpha_y)
+            beta_y = raw_input('Enter beta_y:') # set this to 0.001
+            if len(beta_y) < 1 : beta_y = "5"
+            beta_y = float(beta_y)
+            epsilon_y = raw_input('Enter epsilon_y:') # set this to 0.000001
+            if len(epsilon_y) < 1 : epsilon_y = "0.00001"
+            epsilon_y = float(epsilon_y)
+
+            b = np.zeros(1,dtb)
+            b['alpha_x'] = alpha_x
+            b['beta_x'] = beta_x
+            b['epsilon_x'] = epsilon_x
+            b['alpha_y'] = alpha_y
+            b['beta_y'] = beta_y
+            b['epsilon_y'] = epsilon_y
+            np.savetxt(datafiletwiss, b, '%10s')
+
         nbrofparticles = len(x)
     except:
         print 'Bad datafile!'
@@ -337,11 +378,11 @@ myK = 1
 #myK = sqrt(myKsquared)  # Wille and lie formalism, with Ems this is sqrt(myK), zzzzz
 myKfocus = myK
 myKdefocus = -myK # take this times 100 to get an interesting envelope
-myfQuadL = 0.1 # If FODOF cells set this length to half of mydQuadL
-mydQuadL = 0.2
-myDriftL = 0.1
-mySextuK = 1.5
-mySextuL = 0.5
+myfQuadL = 0.2 # If FODOF cells set this length to half of mydQuadL
+mydQuadL = 0.4
+myDriftL = 0.4
+mySextuK = 0.2
+mySextuL = 0.4
 myOctuL = 0.05
 
 approxOffsetQ = max(abs(x))+3*np.std(x)+max(abs(y))+3*np.std(y)
@@ -381,20 +422,14 @@ if len(nbroffodos) < 1 : nbroffodos = "50"
 nbroffodos = int(nbroffodos)
 for i in range(nbroffodos):
     fodoLattice.append(fF)
-    fodoLattice.append(oO1)
-    fodoLattice.append(oO1)
-    fodoLattice.append(oO1)
+    #fodoLattice.append(sextupole)
     fodoLattice.append(oO1)
     fodoLattice.append(dD)
-    fodoLattice.append(oO2)
-    fodoLattice.append(oO2)
-    fodoLattice.append(oO2)
+    #fodoLattice.append(sextupole)
     fodoLattice.append(oO2)
 
     fodoLattice.append(fF)
 
-    #if i%10 == 0: fodoLattice.append(sextupole)
-    fodoLattice.append(sextupole)
     #fodoLattice.append(octupole)
 
 # input from randoms and loads above
