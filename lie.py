@@ -119,6 +119,8 @@ def findOrder(ham,K,L,acceptableError,approxOffsetQ,approxOffsetP): # Since this
         if abs(error) < acceptableError:
             break
         order += 1
+        #print 'order',order
+        #print 'error',error
 
     return order
 
@@ -279,7 +281,7 @@ if datamodepart == 's':
     if len(nbrofparticles) < 1 : nbrofparticles = "1000"
     nbrofparticles = int(nbrofparticles)
     
-
+    # can only save twiss when saving particles
     if datamodetwiss == 's':
         alpha_x = raw_input('Enter alpha_x:') # set this to 0
         if len(alpha_x) < 1 : alpha_x = "0"
@@ -333,36 +335,7 @@ if datamodepart == 's':
 elif datamodepart == 'l':
     try:
         x, xp, y, yp= np.loadtxt(datafilepart,unpack = True)
-        if datamodetwiss == 'l':
-            alpha_x, beta_x, epsilon_x, alpha_y, beta_y, epsilon_y = np.loadtxt(datafiletwiss,unpack = True)
-        elif datamodetwiss == 's':
-            alpha_x = raw_input('Enter alpha_x:') # set this to 0
-            if len(alpha_x) < 1 : alpha_x = "0"
-            alpha_x = float(alpha_x)
-            beta_x = raw_input('Enter beta_x:') # set this to 0.001
-            if len(beta_x) < 1 : beta_x = "5"
-            beta_x = float(beta_x)
-            epsilon_x = raw_input('Enter epsilon_x:') # set this to 0.000001
-            if len(epsilon_x) < 1 : epsilon_x = "0.00001"
-            epsilon_x = float(epsilon_x)
-            alpha_y = raw_input('Enter alpha_y:') # set this to 0
-            if len(alpha_y) < 1 : alpha_y = "0"
-            alpha_y = float(alpha_y)
-            beta_y = raw_input('Enter beta_y:') # set this to 0.001
-            if len(beta_y) < 1 : beta_y = "5"
-            beta_y = float(beta_y)
-            epsilon_y = raw_input('Enter epsilon_y:') # set this to 0.000001
-            if len(epsilon_y) < 1 : epsilon_y = "0.00001"
-            epsilon_y = float(epsilon_y)
-
-            b = np.zeros(1,dtb)
-            b['alpha_x'] = alpha_x
-            b['beta_x'] = beta_x
-            b['epsilon_x'] = epsilon_x
-            b['alpha_y'] = alpha_y
-            b['beta_y'] = beta_y
-            b['epsilon_y'] = epsilon_y
-            np.savetxt(datafiletwiss, b, '%10s')
+        alpha_x, beta_x, epsilon_x, alpha_y, beta_y, epsilon_y = np.loadtxt(datafiletwiss,unpack = True)
 
         nbrofparticles = len(x)
     except:
@@ -373,18 +346,18 @@ elif datamodepart == 'l':
 
 ##### FODO
 print 'FODO...'
-#myKsquared = 0.0001 # Wille and lie formalism, with Ems this is myK, zzzzz
-myK = 1
+#myKsquared = 0.64 # Wille and lie formalism, with Ems this is myK, zzzzz
+myK = 0.8
 #myK = sqrt(myKsquared)  # Wille and lie formalism, with Ems this is sqrt(myK), zzzzz
 myKfocus = myK
 myKdefocus = -myK # take this times 100 to get an interesting envelope
 myfQuadL = 0.2 # If FODOF cells set this length to half of mydQuadL
 mydQuadL = 0.4
 
-myDriftL = 0.4
+myDriftL = 0.1
 
 mySextuK = 1
-mySextuL = 0.4
+mySextuL = 1
 
 myOctuL = 0.05
 
@@ -403,9 +376,9 @@ print 'driftOrder:',driftOrder
 print 'quadOrderf:',quadOrderf
 print 'quadOrderd:',quadOrderd
 
-sextuOrder = findOrder(sextupoleham,mySextuK,mySextuL,acceptableError,approxOffsetQ,approxOffsetP)
+#sextuOrder = findOrder(sextupoleham,mySextuK,mySextuL,acceptableError,approxOffsetQ,approxOffsetP)
 
-print 'sextuOrder:',sextuOrder
+#print 'sextuOrder:',sextuOrder
 
 
 fF = Element('quadfocus', quadham, myKfocus, myfQuadL, quadOrderf)
@@ -415,7 +388,7 @@ oO2 = Element('drift', driftham, 0, myDriftL, driftOrder)
 
 
 ## higher order elements
-sextupole = Element('sextupole', sextupoleham, mySextuK, mySextuL,sextuOrder)
+#sextupole = Element('sextupole', sextupoleham, mySextuK, mySextuL,sextuOrder)
 #octupole = Element('octupole', octupoleham, myK, myOctuL, order)
 
 
@@ -427,13 +400,19 @@ for i in range(nbroffodos):
     fodoLattice.append(fF)
     #fodoLattice.append(sextupole)
     fodoLattice.append(oO1)
+    fodoLattice.append(oO1)
+    fodoLattice.append(oO1)
+    fodoLattice.append(oO1)
     fodoLattice.append(dD)
+    fodoLattice.append(oO2)
+    fodoLattice.append(oO2)
+    fodoLattice.append(oO2)
     fodoLattice.append(oO2)
 
     fodoLattice.append(fF)
 
     #if i == 5:
-    #fodoLattice.append(sextupole)
+        #fodoLattice.append(sextupole)
     #fodoLattice.append(octupole)
 
 # input from randoms and loads above
@@ -489,8 +468,23 @@ def plotEverything(xin,xpin,yin,ypin,alpha_x,beta_x,epsilon_x,alpha_y,beta_y,eps
     plt.suptitle("Plots")
     plt.show()
 
+def plotEnvelope(envx,envy):
+    plt.figure(0)
+    ax4 = plt.subplot2grid((2,3), (0, 0), colspan=3)
+    plt.plot(envx[:,0],envx[:,1],'ro')
+    plt.title('Envelope in x by z')
+    plt.xlabel('z')
+    plt.ylabel('Envelope in x')
+    ax5 = plt.subplot2grid((2,3), (1, 0), colspan=3)
+    plt.plot(envy[:,0],envy[:,1],'bo')
+    plt.title('Envelope in y by z')
+    plt.xlabel('z')
+    plt.ylabel('Envelope in y')
+
+    plt.show()
+
 #plotPhaseSpace(xoFODO, xpoFODO, yoFODO, ypoFODO)
-#plotEnvelope(envx,envy)
+plotEnvelope(envx,envy)
 
 plotEverything(x,xp,y,yp,alpha_x,beta_x,epsilon_x,alpha_y,beta_y,epsilon_y,xoFODO,xpoFODO,yoFODO,ypoFODO,envx,envy)
 
