@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 #from sympy.mpmath import *
 
 ###################### Symbol setup, define all symbols here
+plt.rcParams.update({'font.size': 22})
 qx = Symbol('qx')
 qy = Symbol('qy')
 qz = Symbol('qz')
@@ -40,9 +41,9 @@ k = Symbol('k')
 
 ## Hamiltonians
 driftham = -l/2*(px**2 + py**2 + pz**2)
-quadham = -l/2*(k**2*(qx**2-qy**2)+px**2+py**2+pz**2) # (Ems formalism), replace k with -k for defocus. Without quad term in z dir
-quadhamdefocus = -l/2*(-k**2*(qx**2-qy**2)+px**2+py**2+pz**2) # (Ems formalism), replace k with -k for defocus. Without quad term in z dir
-sextupoleham = -l/2*(2/3*k*(qx**3-3*qx*qy**2)+(px**2+py**2)) # should the ps' perhaps be divided by 2 as in nonlinear2013_3.pdf? That division is assumed to be the l/2 in the beginning, 
+quadham = -l/2*(k**2*(qx**2-qy**2)+px**2+py**2+pz**2) # replace k with -k for defocus. Without quad term in z dir
+quadhamdefocus = -l/2*(-k**2*(qx**2-qy**2)+px**2+py**2+pz**2) # replace k with -k for defocus. Without quad term in z dir
+sextupoleham = -l/2*(2/3*k**2*(qx**3-3*qx*qy**2)+(px**2+py**2)) # should the ps' perhaps be divided by 2 as in nonlinear2013_3.pdf? That division is assumed to be the l/2 in the beginning, . k is actually k**2
 octupoleham = -l/2*(2/4*k*(qx**4-6*qx**2*qy**2+qy**4)+(px**2+py**2)) # same decision as above
 
 
@@ -351,13 +352,13 @@ myK = 0.8
 #myK = sqrt(myKsquared)  # Wille and lie formalism, with Ems this is sqrt(myK), zzzzz
 myKfocus = myK
 myKdefocus = -myK # take this times 100 to get an interesting envelope
-myfQuadL = 0.2 # If FODOF cells set this length to half of mydQuadL
+myfQuadL = 0.4 # If FODOF cells set this length to half of mydQuadL
 mydQuadL = 0.4
 
-myDriftL = 0.1
+myDriftL = 1.0
 
-mySextuK = 1
-mySextuL = 1
+mySextuK = 0.6
+mySextuL = 0.3
 
 myOctuL = 0.05
 
@@ -376,9 +377,9 @@ print 'driftOrder:',driftOrder
 print 'quadOrderf:',quadOrderf
 print 'quadOrderd:',quadOrderd
 
-#sextuOrder = findOrder(sextupoleham,mySextuK,mySextuL,acceptableError,approxOffsetQ,approxOffsetP)
+sextuOrder = findOrder(sextupoleham,mySextuK,mySextuL,acceptableError,approxOffsetQ,approxOffsetP)
 
-#print 'sextuOrder:',sextuOrder
+print 'sextuOrder:',sextuOrder
 
 
 fF = Element('quadfocus', quadham, myKfocus, myfQuadL, quadOrderf)
@@ -388,7 +389,7 @@ oO2 = Element('drift', driftham, 0, myDriftL, driftOrder)
 
 
 ## higher order elements
-#sextupole = Element('sextupole', sextupoleham, mySextuK, mySextuL,sextuOrder)
+sextupole = Element('sextupole', sextupoleham, mySextuK, mySextuL,sextuOrder)
 #octupole = Element('octupole', octupoleham, myK, myOctuL, order)
 
 
@@ -400,16 +401,17 @@ for i in range(nbroffodos):
     fodoLattice.append(fF)
     #fodoLattice.append(sextupole)
     fodoLattice.append(oO1)
-    fodoLattice.append(oO1)
-    fodoLattice.append(oO1)
-    fodoLattice.append(oO1)
+    #fodoLattice.append(oO1)
+    #fodoLattice.append(oO1)
+    #fodoLattice.append(oO1)
     fodoLattice.append(dD)
+    fodoLattice.append(sextupole)
     fodoLattice.append(oO2)
-    fodoLattice.append(oO2)
-    fodoLattice.append(oO2)
-    fodoLattice.append(oO2)
+    #fodoLattice.append(oO2)
+    #fodoLattice.append(oO2)
+    #fodoLattice.append(oO2)
 
-    fodoLattice.append(fF)
+    #fodoLattice.append(fF)
 
     #if i == 5:
         #fodoLattice.append(sextupole)
@@ -422,6 +424,7 @@ xoFODO, xpoFODO, yoFODO, ypoFODO, envx, envy = evalLattice(fodoLattice,(x,xp,y,y
 
 ######## Print phase space
 print 'Plotting...'
+
 def plotEverything(xin,xpin,yin,ypin,alpha_x,beta_x,epsilon_x,alpha_y,beta_y,epsilon_y,xo,xpo,yo,ypo,envx,envy):
     plt.figure(0)
     ax1 = plt.subplot2grid((4,3), (0,0))
