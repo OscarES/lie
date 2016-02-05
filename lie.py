@@ -405,7 +405,7 @@ for i in range(nbroffodos):
     #fodoLattice.append(oO1)
     #fodoLattice.append(oO1)
     fodoLattice.append(dD)
-    #fodoLattice.append(sextupole)
+    fodoLattice.append(sextupole)
     fodoLattice.append(oO2)
     #fodoLattice.append(oO2)
     #fodoLattice.append(oO2)
