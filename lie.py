@@ -398,7 +398,7 @@ nbroffodos = raw_input('Enter number of FODO cells:')
 if len(nbroffodos) < 1 : nbroffodos = "50"
 nbroffodos = int(nbroffodos)
 for i in range(nbroffodos):
-    #fodoLattice.append(fF)
+    fodoLattice.append(fF)
     #fodoLattice.append(sextupole)
     fodoLattice.append(oO1)
     #fodoLattice.append(oO1)
