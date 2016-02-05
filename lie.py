@@ -350,8 +350,8 @@ print 'FODO...'
 #myKsquared = 0.64 # Wille and lie formalism, with Ems this is myK, zzzzz
 myK = 0.8
 #myK = sqrt(myKsquared)  # Wille and lie formalism, with Ems this is sqrt(myK), zzzzz
-myKfocus = myK
-myKdefocus = -myK # take this times 100 to get an interesting envelope
+myKfocus = -myK # this should be -myK for focus in x if myK is positive
+myKdefocus = myK # take this times 100 to get an interesting envelope # this should be myK for defocus in x if myK is positive
 myfQuadL = 0.4 # If FODOF cells set this length to half of mydQuadL
 mydQuadL = 0.4
 
